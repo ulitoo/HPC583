@@ -36,6 +36,6 @@ int main()
     t2.detach();
     cout << "Main thread continues... going to sleep\n";
     // wait for the detached threads to finish executing
-    this_thread::sleep_for(chrono::milliseconds(200));
+    this_thread::sleep_for(chrono::milliseconds(2000));
     return 0;
 }
