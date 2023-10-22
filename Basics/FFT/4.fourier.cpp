@@ -7,13 +7,25 @@
 int main() {
     // Initialize Gnuplot
     Gnuplot gp;
+    int N = 1<<11;
 
     // Generate and plot a simple function (e.g., sine function)
-    std::vector<std::pair<double, double>> data;
-    for (double x = 0.0; x < 10.0; x += .01)
+    std::vector<std::pair<double, double>> signal;
+    std::vector<std::pair<double, double>> Fsignal;
+    std::vector<double> xsignal,ysignal,xFsignal,yFsignal;
+
+    double x = 0.0;
+    double y = 0.0;
+    for (int i = 0; i < N-1 ; i++)
     {
-        data.push_back(std::make_pair(x, (10.0)*std::sin(x)+(3.0)*std::sin(5.0*x)+(2.0)*std::sin(10.0*x)));
+        xsignal.push_back(x);
+        y= (10.0)*std::sin(x)+(3.0)*std::sin(5.0*x)+(2.0)*std::sin(10.0*x);
+        ysignal.push_back(y);
+        signal.push_back(std::make_pair(x,y));
+        x+=0.01;
     }
+
+
 
     // ***** PLOT OPTIONS ****  gp << "plot '-' with linespoints linewidth 1 linecolor black linetype 4 title 'sin(x)'\n"; // Plot the data
     // ***** PLOT OPTIONS ****  gp << "set grid linewidth 2\n";
@@ -21,12 +33,12 @@ int main() {
     gp << "set terminal wxt size 1024,768\n"; // Set the terminal (window size)
     gp << "set grid\n";
     gp << "plot '-' with lines title 'sin(x)'\n";
-    gp.send(data); // Send the data to Gnuplot
+    gp.send(signal); // Send the data to Gnuplot
     
 
-    for (int i = 0; i < 100 ; i++)
+    for (int i = 0; i < N-1 ; i++)
     {
-        std::cout << "(" << data[i*10].first << "," << data[i*10].second << ")\n";
+        //std::cout << "(" << signal[i].first << "," << signal[i].second << ")-";
     }
 
     // Keep the plot window open
