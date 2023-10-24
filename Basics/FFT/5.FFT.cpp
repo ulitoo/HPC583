@@ -80,16 +80,16 @@ int main(int argc, char **argv)
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double elapsed_time = (duration.count() * 1.e-9);
-    std::cout << "Time: " << elapsed_time << " s." << std::endl;
+    std::cout << "FFT Time: " << elapsed_time << " s.\n" << std::endl;
 
     // Print the results
     for (int k = 0; k < N; k++)
     {
         //std::cout << "DFT[" << k << "] = " << abs(FFTsignal[k]) << std::endl;
     }
-
+/*
     x = 0.0;
-    for (int i = 0; i < N - 1; i++)
+    for (int i = 0; i < N ; i++)
     {
         yFsignal.push_back( std::abs(FFTsignal[i]) / N );
         Fsignal.push_back(std::make_pair(x, yFsignal [i]));
@@ -122,24 +122,6 @@ int main(int argc, char **argv)
     // Keep the plot window open
     std::cout << "Press enter to exit." << std::endl;
     std::cin.get();
-
-    return 0;
-}
-
-/*
-int main()
-{
-    std::vector<std::complex<double>> signal = {1.0 , 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
-
-    fft(signal);
-
-    std::cout << "FFT Results:" << std::endl;
-    for (const auto &element : signal)
-    {
-        std::cout << element << " ";
-    }
-    
-    std::cout << std::endl;
-    return 0;
-}
 */
+    return 0;
+}

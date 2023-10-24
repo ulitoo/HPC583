@@ -4,37 +4,17 @@
 #include <vector>
 #include <cmath>
 #include "gnuplot-iostream.h" // Gnuplot C++ interface
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <fftw3.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 using namespace std::complex_literals;
-
-// Cooley-Tukey FFT algorithm
-void fft(std::vector<std::complex<double>> &a)
-{
-    int n = a.size();
-    if (n <= 1)
-    {
-        return;
-    }
-
-    std::vector<std::complex<double>> even(n / 2);
-    std::vector<std::complex<double>> odd(n / 2);
-
-    for (int i = 0; 2 * i < n; ++i)
-    {
-        even[i] = a[2 * i];
-        odd[i] = a[2 * i + 1];
-    }
-
-    fft(even);
-    fft(odd);
-
-    for (int i = 0; 2 * i < n; ++i)
-    {
-        std::complex<double> t = std::polar(1.0, -2 * M_PI * i / n) * odd[i];
-        a[i] = even[i] + t;
-        a[i + n / 2] = even[i] - t;
-    }
-}
 
 int main(int argc, char **argv)
 {
@@ -42,15 +22,24 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    int N = 8 ;
+    int N = 2048 ;
     // Initialize Gnuplot
     Gnuplot gp,gp1;
-
-
+    fftw_complex *in, *out;
+    fftw_plan p;
+    //printf("FFTW Hola\n");
     if (argc == 2)
     {
         N = 1 << atoi(argv[1]);
     }
+
+    // Create an array to hold the input signal
+    // Create arrays to hold the real and imaginary parts of the output
+    //double* in = (double*) fftw_malloc(sizeof(double) * N);
+    //double* out = (double*) fftw_malloc(sizeof(double) * N);
+
+    in = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
+    out = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N);
 
     // Generate and plot a simple function (e.g., sine function)
     std::vector<std::pair<double, double>> signal;
@@ -58,6 +47,7 @@ int main(int argc, char **argv)
     std::vector<double> xsignal, ysignal, xFsignal, yFsignal;
     std::vector<std::complex<double>> FFTsignal;
 
+    // Initialize the input signal (example values)
     double x = 0.0;
     double y = 0.0;
     for (int i = 0; i < N ; i++)
@@ -66,30 +56,38 @@ int main(int argc, char **argv)
         y = (10.0) * std::sin(2.0 * M_PI * x / N) + (3.0) * std::sin(5.0 * 2.0 * M_PI * x / N) + (2.0) * std::sin(10.0 * 2.0 * M_PI * x / N);
         FFTsignal.push_back(y);
         signal.push_back(std::make_pair(x, y));
+        in[i][0] = y;
+        in[i][1] = 0;
         x += 3;
-        //ysignal.push_back(y);
     }
 
-    // Calculate the FFT
+    // Create a plan for the forward DFT
+    //fftw_plan plan = fftw_plan_dft_r2c_1d(N, in, (fftw_complex*)out, FFTW_ESTIMATE);
     start = std::chrono::high_resolution_clock::now();
     
-    fft(FFTsignal);
+    fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Calculate the FFT
+    // Execute the plan to compute the DFT
     
+    fftw_execute(plan);
+
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double elapsed_time = (duration.count() * 1.e-9);
-    std::cout << "Time: " << elapsed_time << " s." << std::endl;
+    std::cout << "Plan+FFT Time: " << elapsed_time << " s.\n" << std::endl;
 
     // Print the results
     for (int k = 0; k < N; k++)
     {
         //std::cout << "DFT[" << k << "] = " << abs(FFTsignal[k]) << std::endl;
     }
-
+/*
+    // Prepare PLOT
     x = 0.0;
-    for (int i = 0; i < N - 1; i++)
+    for (int i = 0; i < N ; i++)
     {
-        yFsignal.push_back( std::abs(FFTsignal[i]) / N );
+        yFsignal.push_back( (sqrt(out[i][0]*out[i][0]+out[i][1]*out[i][1])) / N );
         Fsignal.push_back(std::make_pair(x, yFsignal [i]));
         x += 1;
     }
@@ -113,7 +111,12 @@ int main(int argc, char **argv)
     // Keep the plot window open
     std::cout << "Press enter to exit." << std::endl;
     std::cin.get();
-
+    
+    // Clean up
+    fftw_destroy_plan(plan);
+    fftw_free(in);
+    fftw_free(out);
+*/
     return 0;
 }
 
