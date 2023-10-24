@@ -17,6 +17,7 @@ int main() {
 
     // ***** PLOT OPTIONS ****  gp << "plot '-' with linespoints linewidth 1 linecolor black linetype 4 title 'sin(x)'\n"; // Plot the data
     // ***** PLOT OPTIONS ****  gp << "set grid linewidth 2\n";
+    //                          gp << "set multiplot\n";
     
     gp << "set terminal wxt size 1024,768\n"; // Set the terminal (window size)
     gp << "set grid\n";

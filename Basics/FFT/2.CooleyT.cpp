@@ -1,9 +1,10 @@
 #include <iostream>
+#include <iomanip>
 #include <complex>
 #include <vector>
 #include <cmath>
 
-const double PI = 3.14159265358979323846;
+using namespace std::complex_literals;
 
 // Cooley-Tukey FFT algorithm
 void fft(std::vector<std::complex<double>> &a)
@@ -28,7 +29,7 @@ void fft(std::vector<std::complex<double>> &a)
 
     for (int i = 0; 2 * i < n; ++i)
     {
-        std::complex<double> t = std::polar(1.0, -2 * PI * i / n) * odd[i];
+        std::complex<double> t = std::polar(1.0, -2 * M_PI * i / n) * odd[i];
         a[i] = even[i] + t;
         a[i + n / 2] = even[i] - t;
     }
@@ -36,7 +37,7 @@ void fft(std::vector<std::complex<double>> &a)
 
 int main()
 {
-    std::vector<std::complex<double>> signal = {1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+    std::vector<std::complex<double>> signal = {1.0 , 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
 
     fft(signal);
 

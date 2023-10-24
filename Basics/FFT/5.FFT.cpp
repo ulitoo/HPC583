@@ -1,26 +1,39 @@
 #include <iostream>
+#include <iomanip>
 #include <complex>
 #include <vector>
 #include <cmath>
 #include "gnuplot-iostream.h" // Gnuplot C++ interface
 
-std::vector<std::complex<double>> calculateDFT(const std::vector<double> &signal)
-{
-    int N = signal.size();
-    std::vector<std::complex<double>> dft(N);
+using namespace std::complex_literals;
 
-    for (int k = 0; k < N; k++)
+// Cooley-Tukey FFT algorithm
+void fft(std::vector<std::complex<double>> &a)
+{
+    int n = a.size();
+    if (n <= 1)
     {
-        dft[k] = {0.0, 0.0};
-        for (int n = 0; n < N; n++)
-        {
-            double angle = 2.0 * M_PI * k * n / N;
-            std::complex<double> term(std::cos(angle), -std::sin(angle));
-            dft[k] += signal[n] * term;
-        }
+        return;
     }
 
-    return dft;
+    std::vector<std::complex<double>> even(n / 2);
+    std::vector<std::complex<double>> odd(n / 2);
+
+    for (int i = 0; 2 * i < n; ++i)
+    {
+        even[i] = a[2 * i];
+        odd[i] = a[2 * i + 1];
+    }
+
+    fft(even);
+    fft(odd);
+
+    for (int i = 0; 2 * i < n; ++i)
+    {
+        std::complex<double> t = std::polar(1.0, -2 * M_PI * i / n) * odd[i];
+        a[i] = even[i] + t;
+        a[i + n / 2] = even[i] - t;
+    }
 }
 
 int main(int argc, char **argv)
@@ -29,48 +42,56 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    
+    int N = 8 ;
     // Initialize Gnuplot
     Gnuplot gp,gp1;
-    int N = 1 << atoi(argv[1]);
+
+
+    if (argc == 2)
+    {
+        N = 1 << atoi(argv[1]);
+    }
 
     // Generate and plot a simple function (e.g., sine function)
     std::vector<std::pair<double, double>> signal;
     std::vector<std::pair<double, double>> Fsignal;
     std::vector<double> xsignal, ysignal, xFsignal, yFsignal;
+    std::vector<std::complex<double>> FFTsignal;
 
     double x = 0.0;
     double y = 0.0;
-    for (int i = 0; i < N - 1; i++)
+    for (int i = 0; i < N ; i++)
     {
         xsignal.push_back(x);
         y = (10.0) * std::sin(2.0 * M_PI * x / N) + (3.0) * std::sin(5.0 * 2.0 * M_PI * x / N) + (2.0) * std::sin(10.0 * 2.0 * M_PI * x / N);
-        ysignal.push_back(y);
+        FFTsignal.push_back(y);
         signal.push_back(std::make_pair(x, y));
         x += 3;
+        //ysignal.push_back(y);
     }
 
     // Calculate the DFT
+    //std::vector<std::complex<double>> dft = calculateDFT(ysignal);
+    
     start = std::chrono::high_resolution_clock::now();
-
-    std::vector<std::complex<double>> dft = calculateDFT(ysignal);
+    
+    fft(FFTsignal);
     
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double elapsed_time = (duration.count() * 1.e-9);
     std::cout << "Time: " << elapsed_time << " s." << std::endl;
 
-
     // Print the results
     for (int k = 0; k < N; k++)
     {
-       // std::cout << "DFT[" << k << "] = " << dft[k] << std::endl;
+        //std::cout << "DFT[" << k << "] = " << abs(FFTsignal[k]) << std::endl;
     }
 
     x = 0.0;
     for (int i = 0; i < N - 1; i++)
     {
-        yFsignal.push_back( std::abs(dft[i]) / N );
+        yFsignal.push_back( std::abs(FFTsignal[i]) / N );
         Fsignal.push_back(std::make_pair(x, yFsignal [i]));
         x += 1;
     }
@@ -93,7 +114,7 @@ int main(int argc, char **argv)
     gp1.send(Fsignal);
     //gp << "unset multiplot\n";
 
-    for (int i = 0; i < N - 1; i++)
+    for (int i = 0; i < N ; i++)
     {
         //    std::cout << "(" << signal[i].first << "," << signal[i].second << ")-";
     }
@@ -104,3 +125,21 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+/*
+int main()
+{
+    std::vector<std::complex<double>> signal = {1.0 , 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0};
+
+    fft(signal);
+
+    std::cout << "FFT Results:" << std::endl;
+    for (const auto &element : signal)
+    {
+        std::cout << element << " ";
+    }
+    
+    std::cout << std::endl;
+    return 0;
+}
+*/
