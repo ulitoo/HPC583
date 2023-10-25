@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     {
         //std::cout << "DFT[" << k << "] = " << abs(FFTsignal[k]) << std::endl;
     }
-/*
+
     // Prepare PLOT
     x = 0.0;
     for (int i = 0; i < N ; i++)
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     fftw_destroy_plan(plan);
     fftw_free(in);
     fftw_free(out);
-*/
+
     return 0;
 }
 
