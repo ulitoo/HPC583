@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     {
         //std::cout << "DFT[" << k << "] = " << abs(FFTsignal[k]) << std::endl;
     }
-/*
+
     x = 0.0;
     for (int i = 0; i < N ; i++)
     {
@@ -122,6 +122,6 @@ int main(int argc, char **argv)
     // Keep the plot window open
     std::cout << "Press enter to exit." << std::endl;
     std::cin.get();
-*/
+
     return 0;
 }
