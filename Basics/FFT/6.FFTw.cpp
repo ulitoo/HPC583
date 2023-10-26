@@ -3,16 +3,14 @@
 #include <complex>
 #include <vector>
 #include <cmath>
-#include "gnuplot-iostream.h" // Gnuplot C++ interface
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
-#include <cmath>
 #include <fftw3.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "gnuplot-iostream.h" // Gnuplot C++ interface
 
 using namespace std::complex_literals;
 
