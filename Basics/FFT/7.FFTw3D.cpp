@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include "gnuplot-iostream.h" // Gnuplot C++ interface
 
-using namespace std::complex_literals;
+using namespace std;
 
 // HOMEWORK 3D transform of a 3d gaussian 3xsigmas -> Add a global phase (Imaginary constant)
 // 3D lattice.
@@ -128,15 +128,15 @@ int main(int argc, char **argv)
     {
         // Error as difference of im and Re squared
         errorsqr += ((out[i][0]-in_back[i][0])*(out[i][0]-in_back[i][0]) + (out[i][1]-in_back[i][1])*(out[i][1]-in_back[i][1]));
-        // Error as difference absoute values
+        // Error as difference absoute values -> Its the same that the following because Im=0 in both
         errorabs += abs(sqrt(out[i][0]*out[i][0] + out[i][1]*out[i][1]) - sqrt(in_back[i][0]*in_back[i][0] + in_back[i][1]*in_back[i][1]));
         // Error only as cummulative of the real parts
         error_Real += abs(out[i][0]-in_back[i][0]);
     }
 
-    std::cout << "\nFFT Sqr Error: " << sqrt(errorsqr) <<"\n";
-    std::cout << "FFT Abs Error: " << errorabs <<"\n";
-    std::cout << "FFT Real Error: " << error_Real <<"\n";
+    std::cout << "\nFFT Sqr Error: " << sqrt(errorsqr/totalN) <<"\n";
+    std::cout << "FFT Abs Error: " << (errorabs)/totalN <<"\n";
+    std::cout << "FFT Real Error: " << error_Real/totalN <<"\n";
 
     // Clean up
     fftw_destroy_plan(plan);
