@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     // Initialize the input signal (with 3d gaussian values).
     // Note that we will move the Gaussian N/2 in each dimension so the peak will be in N/2 (Center in N/2)
     // Real is populated , Imaginary is 0.0
-    double sigma = 3.0; // Standard deviation of the Gaussian
+    double sigma = 1.0; // Standard deviation of the Gaussian
 
     for (int i = 0; i < N; i++)
     {
@@ -127,16 +127,17 @@ int main(int argc, char **argv)
     for (int i = 0; i < N*N*N; i++)
     {
         // Error as difference of im and Re squared
-        errorsqr += ((out[i][0]-in_back[i][0])*(out[i][0]-in_back[i][0]) + (out[i][1]-in_back[i][1])*(out[i][1]-in_back[i][1]));
+        errorsqr += ((in[i][0]-in_back[i][0])*(in[i][0]-in_back[i][0]) + (in[i][1]-in_back[i][1])*(in[i][1]-in_back[i][1]));
         // Error as difference absoute values -> Its the same that the following because Im=0 in both
-        errorabs += abs(sqrt(out[i][0]*out[i][0] + out[i][1]*out[i][1]) - sqrt(in_back[i][0]*in_back[i][0] + in_back[i][1]*in_back[i][1]));
+        errorabs += abs(sqrt(in[i][0]*in[i][0] + in[i][1]*in[i][1]) - sqrt(in_back[i][0]*in_back[i][0] + in_back[i][1]*in_back[i][1]));
         // Error only as cummulative of the real parts
-        error_Real += abs(out[i][0]-in_back[i][0]);
+        error_Real += abs(in[i][0]-in_back[i][0]);
+
     }
 
-    std::cout << "\nFFT Sqr Error: " << sqrt(errorsqr/totalN) <<"\n";
-    std::cout << "FFT Abs Error: " << (errorabs)/totalN <<"\n";
-    std::cout << "FFT Real Error: " << error_Real/totalN <<"\n";
+    std::cout << "\nFFT Sqr Error per point: " << (sqrt(errorsqr))/totalN <<"\n";
+    std::cout << "FFT Abs Error per point: " << (errorabs)/totalN <<"\n";
+    std::cout << "FFT Real Error per point: " << error_Real/totalN <<"\n";
 
     // Clean up
     fftw_destroy_plan(plan);
