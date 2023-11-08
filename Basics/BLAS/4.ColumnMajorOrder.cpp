@@ -43,7 +43,7 @@ int main ( int argc, char* argv[] ) {
     }
 
     // Print the matrix elements
-    cout << "This is the Matrix in Row Marjor Order \n";
+    cout << "This is the Matrix in Row Major Order \n";
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < n; ++j)
@@ -52,7 +52,7 @@ int main ( int argc, char* argv[] ) {
         }
         std::cout << "\n";
     }
-    cout << "\nThis is the Matrix in Column Marjor Order \n";
+    cout << "\nThis is the Matrix in Column Major Order \n";
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < n; ++j)
