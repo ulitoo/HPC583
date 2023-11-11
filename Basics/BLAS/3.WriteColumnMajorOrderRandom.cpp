@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
     
     // Create the matrix and fill it with random values
     std::vector<double> matrix(n * n);
-    std::ofstream outfiletxt("matrix.txt");
-    outfiletxt << "This is the Matrix in Row Marjor Order \n";
+    std::ofstream outfiletxt("matrix_random.txt");
+    outfiletxt << "This is the Matrix in Row Major Order \n";
     for (int i = 0; i < n * n; i++)
     {
         matrix[i] = dist(rng);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
             outfiletxt << "\n";
         }
     }
-    outfiletxt << "\nThis is the Matrix in Column Marjor Order \n";
+    outfiletxt << "\nThis is the Matrix in Column Major Order \n";
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     outfiletxt.close();
 
     // Write the matrix to file in binary format
-    std::ofstream outfile("matrix.bin", std::ios::out | std::ios::binary);
+    std::ofstream outfile("matrix_random.bin", std::ios::out | std::ios::binary);
     if (outfile.is_open())
     {
         outfile.write(reinterpret_cast<const char *>(matrix.data()), sizeof(double) * n * n);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "Failed to open file: matrix.bin" << std::endl;
+        std::cerr << "Failed to open file: matrix_random.bin" << std::endl;
         return 1;
     }
 
