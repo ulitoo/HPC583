@@ -105,7 +105,11 @@ int main(int argc, char **argv)
               << std::endl;
 
     // Normalize output
-    normalize(out, totalN);
+    //normalize(out, totalN);
+    // WHY NORMALIZATION IS NOT NEEDED IN THIS STEP????
+    // Normalization is only needed in the INVERSE case to keep the Scale!!!!!
+    // You can do the math and the 1/N scale comes only in inverse
+    // FFTW does NEVER normalize so for the inverse you need to apply 1/N!!!
 
     start = std::chrono::high_resolution_clock::now();
     plan_back = fftw_plan_dft_3d(N, N, N, out, in_back, FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -116,7 +120,7 @@ int main(int argc, char **argv)
     std::cout << "\nFFT Back for "<< (N) <<"^3 points Time: " << elapsed_time << " s.\n"
               << std::endl;
 
-    // Normalize in_back
+    // Normalize in_back after the Inverse FFT!!!!
     normalize(in_back, totalN);
 
     double errorabs = 0;
