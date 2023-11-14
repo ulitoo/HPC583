@@ -10,6 +10,7 @@ using namespace std;
 
 // 	Problem , get a LU decomposition recursively
 //  Algorithm to be done in Row Major 
+// Now try to explore the PIVOT
 
 /////////////////////////////     FUNCTIONS
 
@@ -25,7 +26,7 @@ void PrintRowMatrix(std::vector<double> matrix)
     }  
 }
 
-void PrintVector(int n, std::vector<double> vector)
+void PrintVector(int n, double *vector)
 {
     for (int i = 0; i < n; i++)
     {
@@ -34,14 +35,12 @@ void PrintVector(int n, std::vector<double> vector)
     cout << "\n";
 }
 
-std::vector<double> InitVector(int n)
-{   
-    std::vector<double> vector(n);
+void InitVector(int n, double *vector)
+{
     for (int i = 0; i < n; i++)
     {
-        vector[i] = (double)((i+1));
+        vector[i] = (double)i;
     }
-    return vector;
 }
 
 std::vector<double> SwapCol_ColMajMatrix(std::vector<double> matrix,int from, int towards)
@@ -162,7 +161,8 @@ int main ( int argc, char* argv[] ) {
     if (!input) {std::cerr << "Error: could not read file" << std::endl; return 1;}
     // Transform Matrix into Row Major
     matrixRow = RowtoColMajor_Transpose (matrixCol);
-    //matrixRow = {7.0,1.0,5.0,4.0,3.0,5.0,6.0,1.0,2.0};
+
+    matrixRow = {7.0,1.0,5.0,4.0,3.0,5.0,6.0,1.0,2.0};
 
     // Print the matrix elements
     cout << "\nMatrix A Print:\n";
@@ -221,45 +221,5 @@ int main ( int argc, char* argv[] ) {
     }
 
     std::cout << "\nCumulative error:" << diff << std::endl;
-
-    //Now Solve system of linear equations given Ax=b given b=( 1 2 3 4 ... n)
-
-    std::vector<double> vectorb(n);
-    vectorb = InitVector(n);
-    std::cout << "\nVector b:" << std::endl;
-    //vectorb = {27.0,21.0,9.0};
-    PrintVector(n,vectorb);
-
-    // Solve LUx=b -> (2) Ux=y -> (1) Ly=b
-    // Solve (1)
-
-    std::vector<double> vectory(n);
-    for (int i = 0; i < n; ++i)
-    {
-        vectory[i]=vectorb[i];
-        for (int j = 0; j < i; ++j)
-        {
-            vectory[i] -= matrixL[i*n+j]*vectory[j];
-        }
-        vectory[i] /= matrixL[i+n*i];
-    }   
-    std::cout << "\nVector y:" << std::endl;
-    PrintVector(n,vectory);
-
-    // Solve (2) Ux=y
-    std::vector<double> vectorx(n);
-    for (int i = n-1; i >= 0; --i)
-    {
-        vectorx[i]=vectory[i];
-        for (int j = n-1; j > i; --j)
-        {
-            vectorx[i] -= matrixU[i*n+j]*vectorx[j];
-        }
-    }   
-   
-    std::cout << "\nSOLUTION Vector x:" << std::endl;
-    PrintVector(n,vectorx);
-
-
     return 0;
 }

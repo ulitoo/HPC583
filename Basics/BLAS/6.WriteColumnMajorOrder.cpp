@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     // Create the matrix IN ROW MAJOR and fill it with Ordered N values
     std::vector<double> matrixRow(n * n);
     std::vector<double> matrixCol(n * n);
-    for (int i = 0; i < n * n; i++) {matrixRow[i] = (double)i;}
+    for (int i = 0; i < n * n; i++) {matrixRow[i] = (double)(i+1)*(i+1);}
     matrixCol = RowtoColMajor_Transpose(matrixRow);
 
     // Write the Column Major matrix to file in binary format
