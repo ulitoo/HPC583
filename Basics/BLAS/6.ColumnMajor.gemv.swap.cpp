@@ -196,5 +196,9 @@ int main ( int argc, char* argv[] ) {
     cout << "\nColMajor matrix after swap Row alpha with beta Print:\n";
     PrintColMatrix(SwapRow_ColMajMatrix(matrixCol,round(alpha),round(beta)));    
 
+    // Solve BLAS triangular
+    // cblas_ztrsm
+    // cblas_dtrsv
+
     return 0;
 }

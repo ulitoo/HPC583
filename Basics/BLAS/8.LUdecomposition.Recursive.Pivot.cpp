@@ -8,6 +8,7 @@
 
 using namespace std;
 
+
 // 	Problem , get a LU decomposition recursively
 //  Algorithm to be done in Row Major 
 // Now try to explore the PIVOT
@@ -26,7 +27,7 @@ void PrintRowMatrix(std::vector<double> matrix)
     }  
 }
 
-void PrintVector(int n, double *vector)
+void PrintVector(int n, std::vector<double> vector)
 {
     for (int i = 0; i < n; i++)
     {
@@ -35,12 +36,14 @@ void PrintVector(int n, double *vector)
     cout << "\n";
 }
 
-void InitVector(int n, double *vector)
-{
+std::vector<double> InitVector(int n)
+{   
+    std::vector<double> vector(n);
     for (int i = 0; i < n; i++)
     {
-        vector[i] = (double)i;
+        vector[i] = (double)((i+1));
     }
+    return vector;
 }
 
 std::vector<double> SwapCol_ColMajMatrix(std::vector<double> matrix,int from, int towards)
@@ -131,6 +134,39 @@ std::vector<double> LUdecomposition1(std::vector<double> matrix)
     }
 }
 
+std::vector<double> LUdecomposition_pivot(std::vector<double> matrix)
+{
+    int n = round(sqrt(matrix.size()));
+    std::vector<double> LUmatrix((n) * (n));
+    std::vector<double> S22((n-1) * (n-1));
+    std::vector<double> LU22((n-1) * (n-1));
+    
+    LUmatrix[0]=matrix[0];
+    for (int i = 1; i < n; i++)
+    {
+        LUmatrix[i] = matrix[i] / matrix[0];
+        LUmatrix[i*n] = matrix[i*n];
+    }
+    
+    if (n==2) 
+    {
+        LUmatrix[3] = matrix [3] - matrix[1]*matrix[2]/matrix[0];  
+        return LUmatrix;    
+    }
+    else
+    {
+        S22 = SchurComplement (matrix);
+        LU22 = LUdecomposition1 (S22);
+        for (int i = 1; i < n; i++)
+        {
+            for (int j = 1; j < n; j++)
+            {
+            LUmatrix[j+i*n] = LU22[(j-1)+(i-1)*(n-1)];
+            }
+        }
+        return LUmatrix;
+    }
+}
 
 /////////////////////////////     MAIN
 
@@ -151,6 +187,13 @@ int main ( int argc, char* argv[] ) {
     std::vector<double> matrixL(n * n);
     std::vector<double> matrixU(n * n);
     std::vector<double> A_fin(n * n);
+ 
+    std::vector<double> matrixLU_pivot(n * n);
+    std::vector<double> matrixL_pivot(n * n);
+    std::vector<double> matrixU_pivot(n * n);
+    std::vector<double> A_fin_pivot(n * n);
+    std::vector<double> matrix_pivot(n * n);
+ 
     // Open the binary file for reading and handle error
     std::ifstream input(argv[1], std::ios::binary);
     //std::ifstream input("matrix_random.bin", std::ios::binary);
@@ -161,14 +204,15 @@ int main ( int argc, char* argv[] ) {
     if (!input) {std::cerr << "Error: could not read file" << std::endl; return 1;}
     // Transform Matrix into Row Major
     matrixRow = RowtoColMajor_Transpose (matrixCol);
-
-    matrixRow = {7.0,1.0,5.0,4.0,3.0,5.0,6.0,1.0,2.0};
+    //matrixRow = {7.0,1.0,5.0,4.0,3.0,5.0,6.0,1.0,2.0};
 
     // Print the matrix elements
     cout << "\nMatrix A Print:\n";
     PrintRowMatrix(matrixRow);
 
     matrixLU = LUdecomposition1(matrixRow);
+    matrixLU_pivot = LUdecomposition_pivot(matrixRow);
+    //////////////////////////donde pones P?
     
     for (int i = 0; i < n; i++)
     {
@@ -177,6 +221,7 @@ int main ( int argc, char* argv[] ) {
             if (i==j){
                 matrixL[j + i * n] = matrixLU[j + i * n];
                 matrixU[j + i * n] = 1.0;
+                ////////////////////// extract L y U del LUpivot
             }
             else if (i>j){
                 matrixL[j + i * n] = matrixLU[j + i * n];
@@ -221,5 +266,46 @@ int main ( int argc, char* argv[] ) {
     }
 
     std::cout << "\nCumulative error:" << diff << std::endl;
+
+    //Now Solve system of linear equations given Ax=b given b=( 1 2 3 4 ... n)
+
+    std::vector<double> vectorb(n);
+    vectorb = InitVector(n);
+    std::cout << "\nVector b:" << std::endl;
+    //vectorb = {27.0,21.0,9.0};
+    PrintVector(n,vectorb);
+
+    // Solve LUx=b -> (2) Ux=y -> (1) Ly=b
+    // Solve (1)
+
+    std::vector<double> vectory(n);
+    for (int i = 0; i < n; ++i)
+    {
+        vectory[i]=vectorb[i];
+        for (int j = 0; j < i; ++j)
+        {
+            vectory[i] -= matrixL[i*n+j]*vectory[j];
+        }
+        vectory[i] /= matrixL[i+n*i];
+    }   
+    std::cout << "\nVector y:" << std::endl;
+    PrintVector(n,vectory);
+
+    // Solve (2) Ux=y
+    std::vector<double> vectorx(n);
+    for (int i = n-1; i >= 0; --i)
+    {
+        vectorx[i]=vectory[i];
+        for (int j = n-1; j > i; --j)
+        {
+            vectorx[i] -= matrixU[i*n+j]*vectorx[j];
+        }
+    }   
+   
+    std::cout << "\nSOLUTION Vector x:" << std::endl;
+    PrintVector(n,vectorx);
+
+
+    
     return 0;
 }
