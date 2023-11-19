@@ -246,9 +246,44 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
     }
 }
 
-void LowerTriangularSolverNaiveReal()
-{
+void InitVector(double *vectorB, int n)
+{   
+    for (int i = 0; i < n; i++)
+    {
+        vectorB[i] = (double)((n-i+1)*(n-i+1));
+    }
+}
 
+void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < n; i++)
+        {   
+            double tempval = 0;
+            for (int k = 0; k < i; k++)
+            {
+                tempval += matrixL[i+k*n] * matrixSol[k+j*n];
+            }
+            matrixSol[j*n+i] = (matrixB[j*n+i] - tempval) / matrixL[i*n+i];
+        }
+    }
+}
+
+void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = n-1; i >= 0; i--)
+        {   
+            double tempval = 0;
+            for (int k = n-1; k > i; k--)
+            {
+                tempval += matrixU[i+k*n] * matrixSol[k+j*n];
+            }
+            matrixSol[j*n+i] = (matrixB[j*n+i] - tempval) / matrixU[i*n+i];
+        }
+    }
 }
 
 void LowerTriangularSolverRecursiveReal()
@@ -259,62 +294,75 @@ void LowerTriangularSolverRecursiveReal()
 /////////////////////////////     MAIN
 int main ( int argc, char* argv[] ) {
 
-    if (argc != 7)
+    if (argc != 6)
     {
-        std::cerr << "Usage: " << argv[0] << " <filenameA> <filenameB> m n p recursion_limit" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <filenameL> <filenameU> <filenameB> n recursion_limit" << std::endl;
         return 1;
     }
     
-    const int m = std::atoi(argv[3]); // m
     const int n = std::atoi(argv[4]); // n
-    const int p = std::atoi(argv[5]); // p
-    const int recursion_limit = std::atoi(argv[6]); // depth of recursion
+    const int recursion_limit = std::atoi(argv[5]); // depth of recursion
     
     // Create a vector to store the Column Major matrix data and another for the Row Major
-    double *matrixA = (double *)malloc(m * n * sizeof(double));
-    double *matrixB = (double *)malloc(n * p * sizeof(double));
-    double *matrixC = (double *)malloc(m * p * sizeof(double));
-    double *matrixC_test = (double *)malloc(m * p * sizeof(double));
-
+    double *matrixL = (double *)malloc(n * n * sizeof(double));
+    double *matrixU = (double *)malloc(n * n * sizeof(double));
+    double *matrixB = (double *)malloc(n * n * sizeof(double));
+    double *LowerMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
+    double *LowerMatrixXsol = (double *)malloc(n * n * sizeof(double));
+    double *UpperMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
+    double *UpperMatrixXsol = (double *)malloc(n * n * sizeof(double));
+    double *LowerCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
+    double *UpperCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
+        
     // Open the binary file for reading and handle error
     std::ifstream inputA(argv[1], std::ios::binary);
     std::ifstream inputB(argv[2], std::ios::binary);
-    std::ifstream input("matrix_random.bin", std::ios::binary);
-    if (!inputA or !inputB){std::cerr << "Error: could not open file for reading" << std::endl; return 1;}
+    std::ifstream inputC(argv[3], std::ios::binary);
+      if (!inputA or !inputB or !inputC){std::cerr << "Error: could not open file for reading" << std::endl; return 1;}
     // Read the binary data into the vector
-    inputA.read(reinterpret_cast<char *>(matrixA), sizeof(double) * m * n);
-    inputB.read(reinterpret_cast<char *>(matrixB), sizeof(double) * n * p);
+    inputA.read(reinterpret_cast<char *>(matrixL), sizeof(double) * n * n);
+    inputB.read(reinterpret_cast<char *>(matrixU), sizeof(double) * n * n);
+    inputC.read(reinterpret_cast<char *>(matrixB), sizeof(double) * n * n);
     // Check if read was successful and handle error 
-    if (!inputA or !inputB) {std::cerr << "Error: could not read file" << std::endl; return 1;}
+    if (!inputA or !inputB or !inputC) {std::cerr << "Error: could not read file" << std::endl; return 1;}
     
     // Print the matrix elements
-    cout << "\nMatrix A Print:\n";
-    PrintColMatrix(matrixA,m,n);
+    cout << "\nMatrix L Print:\n";
+    PrintColMatrix(matrixL,n,n);
+    cout << "\nMatrix U Print:\n";
+    PrintColMatrix(matrixU,n,n);
     cout << "\nMatrix B Print:\n";
-    PrintColMatrix(matrixB,n,p);
-    
-    // Multiply
-    MMMultRecursive(matrixA,matrixB,matrixC,m,n,p,recursion_limit);
+    PrintColMatrix(matrixB,n,n);
 
-    cout << "\nMatrix C Recursive:\n";
-    PrintColMatrix(matrixC,m,p);
-   
-    // Naive Calculation of product to compare with recursive version
-    NaiveMatrixMultiplyCol(matrixA,matrixB,matrixC_test,m,n,p);
-    //cout << "\nMatrix Ctest Naive:" << std::endl;
-    //PrintColMatrix (matrixC_test,m,p);
+    // Solve Naive
+    LowerTriangularSolverNaiveReal(matrixL, matrixB, LowerMatrixXsolNaive, n);
+    UpperTriangularSolverNaiveReal(matrixU, matrixB, UpperMatrixXsolNaive, n);
+    NaiveMatrixMultiplyCol(matrixL, LowerMatrixXsolNaive, LowerCalculatedBNaive, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
 
-    double diff=MatrixAbsDiff(matrixC_test,matrixC,m,p);
+    //cout << "\nLower Matrix X Solution Naive:\n";
+    //PrintColMatrix(LowerMatrixXsolNaive,n,n);
+    //cout << "\nUpper Matrix X Solution Naive:\n";
+    //PrintColMatrix(UpperMatrixXsolNaive,n,n);
 
-    cout << "\nABS (C - Ctest)-----------------> : " << diff << "\n";
+    double Ldiffnaive=MatrixAbsDiff(matrixB,LowerCalculatedBNaive,n,n);
+    double Udiffnaive=MatrixAbsDiff(matrixB,UpperCalculatedBNaive,n,n);
+
+    cout << "\nNaive Error (LX - B)-----------------> : " << Ldiffnaive << "\n";
+    cout << "Naive Error (UX - B)-----------------> : " << Udiffnaive << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
 
     //    LAPACK_zgesv();
     //    LAPACK_dgesv();
 
-    free(matrixA);
+    free(matrixL);
+    free(matrixU);
     free(matrixB);
-    free(matrixC);
-    free(matrixC_test);
+    free(LowerMatrixXsolNaive);
+    free(LowerMatrixXsol);
+    free(UpperMatrixXsolNaive);
+    free(UpperMatrixXsol);
+    free(LowerCalculatedBNaive);
+    free(UpperCalculatedBNaive);
     return 0;
 }
