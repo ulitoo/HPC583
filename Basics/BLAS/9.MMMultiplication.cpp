@@ -141,7 +141,6 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
 //Initialize will Create the submatrices based on the big matrix
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
-    // CRFEATE this algo from scratch
     int mm = m / 2;
     int mm2 = m - mm;
     int pp = p / 2;
