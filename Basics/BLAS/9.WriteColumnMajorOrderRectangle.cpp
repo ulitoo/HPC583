@@ -64,10 +64,10 @@ int main(int argc, char *argv[])
     
     // Print Matrix  Colum Major
     cout << "\nRowMajor matrix Print:\n";
-    PrintColMatrix(matrix,m,n);
+    //PrintColMatrix(matrix,m,n);
     // Print Matrix  Colum Major
     cout << "\nSame Trasposed matrix Print:\n";
-    PrintColMatrix(matrixtrsp,n,m);
+    //PrintColMatrix(matrixtrsp,n,m);
 
     cout << "\nMatrix correctly Created and written in file as ColMajor\n\n";
 

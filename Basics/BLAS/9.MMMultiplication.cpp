@@ -290,15 +290,15 @@ int main ( int argc, char* argv[] ) {
     
     // Print the matrix elements
     cout << "\nMatrix A Print:\n";
-    PrintColMatrix(matrixA,m,n);
+    //PrintColMatrix(matrixA,m,n);
     cout << "\nMatrix B Print:\n";
-    PrintColMatrix(matrixB,n,p);
+    //PrintColMatrix(matrixB,n,p);
     
     // Multiply
     MMMultRecursive(matrixA,matrixB,matrixC,m,n,p,recursion_limit);
 
     cout << "\nMatrix C Recursive:\n";
-    PrintColMatrix(matrixC,m,p);
+    //PrintColMatrix(matrixC,m,p);
    
     // Naive Calculation of product to compare with recursive version
     NaiveMatrixMultiplyCol(matrixA,matrixB,matrixC_test,m,n,p);
