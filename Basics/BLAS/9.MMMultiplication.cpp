@@ -12,6 +12,7 @@ using namespace std;
 //  Algorithm to be done in COLUMN Major 
 //  USE POINTERS in this exercise double *C = (double *)malloc(m * n * sizeof(double));
 //  free to avoid Memory leaks!!!!!!
+//  I created several versions, first one not being efficient and doing malloc for A11, A21.... and the last without extra Malloc
 
 /*
     //THE OPTIMAL approach would be to transpose A so rows are adjecent in A*B multiplication
