@@ -292,7 +292,6 @@ void Rewrite_A_over_B(double *matrixA, double *matrixB, int n,int p)
 /////////////////////////////     MAIN
 int main(int argc, char *argv[])
 {
-
     if (argc != 5)
     {
         std::cerr << "Usage: " << argv[0] << " <filenameL> <filenameU> <filenameB> n " << std::endl;
@@ -307,6 +306,8 @@ int main(int argc, char *argv[])
     double *matrixU = (double *)malloc(n * n * sizeof(double));
     double *matrixB = (double *)malloc(n * n * sizeof(double));
     double *matrixB_orig = (double *)malloc(n * n * sizeof(double));
+    double *matrixL_orig = (double *)malloc(n * n * sizeof(double));
+    double *matrixU_orig = (double *)malloc(n * n * sizeof(double));
     // Solution Matrices
     double *LowerMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
     double *LowerMatrixXsol = (double *)malloc(n * n * sizeof(double));
@@ -342,7 +343,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Print the matrix elements
+    // Print the matrix elements of L U and B
     //cout << "\nMatrix L Print:\n";
     //PrintColMatrix(matrixL, n, n);
     //cout << "\nMatrix U Print:\n";
@@ -351,6 +352,8 @@ int main(int argc, char *argv[])
     //PrintColMatrix(matrixB, n, n);
 
     Rewrite_A_over_B(matrixB, matrixB_orig, n, p);
+    Rewrite_A_over_B(matrixL, matrixL_orig, n, p);
+    Rewrite_A_over_B(matrixU, matrixU_orig, n, p);
 
     // Solve Naive
     LowerTriangularSolverNaiveReal(matrixL, matrixB, LowerMatrixXsolNaive, n);
@@ -363,7 +366,16 @@ int main(int argc, char *argv[])
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
  
     //Solve BLAS
-    //LAPACK_dgesv();
+    int INFO;
+    int IPIV[n];
+    LAPACK_dgesv(&n,&p,matrixL,&n,IPIV,matrixB,&n,&INFO);
+    Rewrite_A_over_B(matrixB, LowerMatrixBLASsol, n, p);
+    Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
+    int INFO2;
+    int IPIV2[n];
+    LAPACK_dgesv(&n,&p,matrixU,&n,IPIV2,matrixB,&n,&INFO2);
+    Rewrite_A_over_B(matrixB, UpperMatrixBLASsol, n, p);
+    Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
 
     // PRINT NAIVE Solutions
     //cout << "\nLower Matrix X Solution Naive:\n";
@@ -378,37 +390,30 @@ int main(int argc, char *argv[])
     //PrintColMatrix(UpperMatrixXsol,n,n);
     
     // ERROR CALCULATION and display
-    // EXAMPLE with DGEMM : cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixL, n, LowerMatrixXsolNaive, n, 0.0, LowerCalculatedBNaive, n);
-    NaiveMatrixMultiplyCol(matrixL, LowerMatrixXsolNaive, LowerCalculatedBNaive, n, n, n);
-    NaiveMatrixMultiplyCol(matrixU, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
-    NaiveMatrixMultiplyCol(matrixL, LowerMatrixXsol, LowerCalculatedB, n, n, n);
-    NaiveMatrixMultiplyCol(matrixU, UpperMatrixXsol, UpperCalculatedB, n, n, n);
+    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsolNaive, LowerCalculatedBNaive, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
+    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsol, LowerCalculatedB, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsol, UpperCalculatedB, n, n, n);
+    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixBLASsol, LowerCalculatedBBLAS, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixBLASsol, UpperCalculatedBBLAS, n, n, n);
 
     double Ldiffnaive = MatrixAbsDiff(matrixB_orig, LowerCalculatedBNaive, n, n);
     double Udiffnaive = MatrixAbsDiff(matrixB_orig, UpperCalculatedBNaive, n, n);
     double Ldiff = MatrixAbsDiff(matrixB_orig, LowerCalculatedB, n, n);
     double Udiff = MatrixAbsDiff(matrixB_orig, UpperCalculatedB, n, n);
+    double LdiffBLAS = MatrixAbsDiff(matrixB_orig, LowerCalculatedBBLAS, n, n);
+    double UdiffBLAS = MatrixAbsDiff(matrixB_orig, UpperCalculatedBBLAS, n, n);
 
     cout << "\nNaive Error (LX - B)-----------------> : " << Ldiffnaive << "\n";
     cout << "Naive Error (UX - B)-----------------> : " << Udiffnaive << "\n";
     cout << "\nRecursive Error (LX - B)-----------------> : " << Ldiff << "\n";
     cout << "Recursive Error (UX - B)-----------------> : " << Udiff << "\n";
+    cout << "\nBLAS Error (LX - B)-----------------> : " << LdiffBLAS << "\n";
+    cout << "BLAS Error (UX - B)-----------------> : " << UdiffBLAS << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
 
-    //    Now Compare with Real solver from LAPACK
-    //    LAPACK_zgesv();
-    //    LAPACK_dgesv();
+    //    Compare with Real solver from LAPACK LAPACK_dgesv();
+    //    LAPACK_zgesv() is Complex Solver
 
-    free(matrixL);
-    free(matrixU);
-    free(matrixB);
-    free(LowerMatrixXsolNaive);
-    free(LowerMatrixXsol);
-    free(UpperMatrixXsolNaive);
-    free(UpperMatrixXsol);
-    free(LowerCalculatedBNaive);
-    free(UpperCalculatedBNaive);
-    free(LowerCalculatedB);
-    free(UpperCalculatedB);
-    return 0;
+   return 0;
 }
