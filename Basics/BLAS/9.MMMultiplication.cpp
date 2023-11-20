@@ -257,6 +257,138 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
     }
 }
 
+// Get value (ColMajorFormat) from orinal matrix with n rows, submatrix (0,0) starts in (n1,p1), element i,j
+double GetSubMatrixValue(double *matrixa,int n,int n1,int p1, int i, int j)
+{
+    return matrixa[n1 + i + (p1+j)*n];
+}
+
+
+void NaiveMatrixMultiplyColReferenced(double *matrixa, int matrixa_m, int a_m1, int a_n1 ,double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int m, int n, int p)
+{
+    // This commented line will help debug
+    // cout<<"\n SubMatrix A " << a_m1 << "," << a_n1 <<"  SubMatrix B " << b_n1 << "," << b_p1 <<"\n";
+    for (int i = 0; i < m; ++i)
+    {
+        for (int j = 0; j < p; ++j)
+        {
+            for (int k = 0; k < n; ++k)
+            {
+                matrixc[i + (j)*m] += (matrixa[a_m1 + i +(a_n1+k)*matrixa_m])*(matrixb[b_n1 + k +(b_p1+j)*matrixb_n]); 
+                // A(i,k)*B(k,j)
+            }
+        }
+    }
+}
+
+void NaiveMatrixMultiplyColReferenced2(double *matrixa, int matrixa_m, int a_m1, int a_n1 ,double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc,int matrixc_m, int c_m1, int c_p1, int m, int n, int p)
+{
+    // This commented line will help debug
+    // cout<<"\n SubMatrix A " << a_m1 << "," << a_n1 <<"  SubMatrix B " << b_n1 << "," << b_p1 <<"\n";
+    for (int i = 0; i < m; ++i)
+    {
+        for (int j = 0; j < p; ++j)
+        {
+            for (int k = 0; k < n; ++k)
+            {
+                matrixc[c_m1 + i + ((c_p1+j)*matrixc_m)] += (matrixa[a_m1 + i +(a_n1+k)*matrixa_m])*(matrixb[b_n1 + k +(b_p1+j)*matrixb_n]); 
+                // A(i,k)*B(k,j)
+            }
+        }
+    }
+}
+
+void MMMultRecursive2(double *matrixa, int matrixa_m, int a_m1, int a_n1 ,double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int m, int n, int p, int recursion_limit)
+{
+    recursion_count++;
+    // This Version will NOT Malloc Axx nor Bxx and will rely on searching entry on original Matrix
+    // This version uses entire a and b and pases position of elements (0,0) and original row length
+    // GetSubMatrixValue
+
+    if (m<=recursion_limit or n<=recursion_limit or p<=recursion_limit)
+    {
+        NaiveMatrixMultiplyColReferenced(matrixa,matrixa_m,a_m1,a_n1 ,matrixb,matrixb_n,b_n1,b_p1, matrixc,m,n,p);        
+    }
+    else
+    {
+        int mm = m / 2;
+        int mm2 = m - mm; // If odd numbers then mm != mm2 so we keep track of the fact
+        int nn = n / 2;
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+        
+        double *C11 = (double *)malloc(mm * pp * sizeof(double));
+        MakeZeroes(C11, mm, pp);
+        double *C12 = (double *)malloc(mm * pp2 * sizeof(double));
+        MakeZeroes(C12, mm, pp2);
+        double *C21 = (double *)malloc(mm2 * pp * sizeof(double));
+        MakeZeroes(C21, mm2, pp);
+        double *C22 = (double *)malloc(mm2 * pp2 * sizeof(double));
+        MakeZeroes(C22, mm2, pp2);
+
+        // C11 is recurse1 and recurse2
+        MMMultRecursive2(matrixa,matrixa_m,a_m1,a_n1 ,matrixb,matrixb_n,b_n1,b_p1, C11,mm,nn,pp,recursion_limit);
+        MMMultRecursive2(matrixa,matrixa_m,a_m1,a_n1+nn,matrixb,matrixb_n,b_n1+nn,b_p1, C11,mm,nn2,pp,recursion_limit);
+                
+        // C12 is recurse3 and recurse4
+        MMMultRecursive2(matrixa,matrixa_m,a_m1,a_n1 ,matrixb,matrixb_n,b_n1,b_p1+pp, C12,mm,nn,pp2,recursion_limit);
+        MMMultRecursive2(matrixa,matrixa_m,a_m1,a_n1+nn ,matrixb,matrixb_n,b_n1+nn,b_p1+pp, C12,mm,nn2,pp2,recursion_limit);
+        
+        // C21 is recurse5 and recurse6
+        MMMultRecursive2(matrixa,matrixa_m,a_m1+mm,a_n1 ,matrixb,matrixb_n,b_n1,b_p1, C21,mm2,nn,pp,recursion_limit);
+        MMMultRecursive2(matrixa,matrixa_m,a_m1+mm,a_n1+nn ,matrixb,matrixb_n,b_n1+nn,b_p1, C21,mm2,nn2,pp,recursion_limit);
+        
+        // C22 is recurse7 and recurse8
+        MMMultRecursive2(matrixa,matrixa_m,a_m1+mm,a_n1 ,matrixb,matrixb_n,b_n1,b_p1+pp, C22,mm2,nn,pp2,recursion_limit);
+        MMMultRecursive2(matrixa,matrixa_m,a_m1+mm,a_n1+nn ,matrixb,matrixb_n,b_n1+nn,b_p1+pp, C22,mm2,nn2,pp2,recursion_limit);
+        
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixc,C11,C12,C21,C22,m,p);
+     
+        free(C11);
+        free(C12);
+        free(C21);
+        free(C22);
+    }
+}
+
+void MMMultRecursive3(double *matrixa, int matrixa_m, int a_m1, int a_n1, double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int matrixc_m, int c_m1, int c_p1, int m, int n, int p, int recursion_limit)
+{
+    recursion_count++;
+    // This Version will NOT Malloc Cxx Either and will write C elements on proper places
+
+    if (m <= recursion_limit or n <= recursion_limit or p <= recursion_limit)
+    {
+        NaiveMatrixMultiplyColReferenced2(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, m, n, p);
+    }
+    else
+    {
+        int mm = m / 2;
+        int mm2 = m - mm; // If odd numbers then mm != mm2 so we keep track of the fact
+        int nn = n / 2;
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+
+        // C11 is recurse1 and recurse2
+        MMMultRecursive3(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn, pp, recursion_limit);
+        MMMultRecursive3(matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn2, pp, recursion_limit);
+
+        // C12 is recurse3 and recurse4
+        MMMultRecursive3(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn, pp2, recursion_limit);
+        MMMultRecursive3(matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn2, pp2, recursion_limit);
+
+        // C21 is recurse5 and recurse6
+        MMMultRecursive3(matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn, pp, recursion_limit);
+        MMMultRecursive3(matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn2, pp, recursion_limit);
+
+        // C22 is recurse7 and recurse8
+        MMMultRecursive3(matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn, pp2, recursion_limit);
+        MMMultRecursive3(matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn2, pp2, recursion_limit);
+    }
+}
+
 /////////////////////////////     MAIN
 int main ( int argc, char* argv[] ) {
 
@@ -295,9 +427,11 @@ int main ( int argc, char* argv[] ) {
     //PrintColMatrix(matrixB,n,p);
     
     // Multiply
-    MMMultRecursive(matrixA,matrixB,matrixC,m,n,p,recursion_limit);
-
-    cout << "\nMatrix C Recursive:\n";
+    //MMMultRecursive(matrixA,matrixB,matrixC,m,n,p,recursion_limit); // With extra Malloc's
+    //MMMultRecursive2(matrixA,m,0,0 ,matrixB,n,0,0, matrixC,m,n,p,recursion_limit);
+    MMMultRecursive3(matrixA,m,0,0 ,matrixB,n,0,0, matrixC,m,0,0,m,n,p,recursion_limit);
+         
+    cout << "\nMatrix C Recursive Optimization #3 No Malloc:\n";
     //PrintColMatrix(matrixC,m,p);
    
     // Naive Calculation of product to compare with recursive version
@@ -307,7 +441,7 @@ int main ( int argc, char* argv[] ) {
 
     double diff=MatrixAbsDiff(matrixC_test,matrixC,m,p);
 
-    cout << "\nABS (C - Ctest)-----------------> : " << diff << "\n";
+    cout << "\nABS Error (C - Ctest)-----------------> : " << diff << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
 
     free(matrixA);

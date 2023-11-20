@@ -9,7 +9,7 @@
 using namespace std;
 
 // Problem , get a recursive algorithm for a Triangular solver that does the last step after LU factorization
-// Ax=b -> LUx=b -> Ux=y // Ly=b //-> solve y from Ly=b and then solve x from Ux=y 
+// Ax=b -> LUx=b -> Ux=y // Ly=b //-> solve y from Ly=b and then solve x from Ux=y
 // Case 1) left lower // Case 2) left upper
 // then calculate distance (error from Ax to b)
 // Compare Timing with dgesv (double real)/ zgesv (complex)
@@ -24,10 +24,11 @@ void PrintRowMatrix(double *matrix, int m, int n)
     for (int i = 0; i < m * n; i++)
     {
         cout << matrix[i] << " ";
-        if (i%n==n-1) {
+        if (i % n == n - 1)
+        {
             cout << "\n";
         }
-    }  
+    }
 }
 
 void PrintColMatrix(double *matrix, int m, int n)
@@ -36,13 +37,13 @@ void PrintColMatrix(double *matrix, int m, int n)
     {
         for (int j = 0; j < n; j++)
         {
-            cout << matrix[i+(j*m)] << " ";
+            cout << matrix[i + (j * m)] << " ";
         }
         cout << "\n";
     }
 }
 
-void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, int m, int n,int p)
+void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, int m, int n, int p)
 {
     for (int i = 0; i < m; ++i)
     {
@@ -50,7 +51,7 @@ void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, i
         {
             for (int k = 0; k < n; ++k)
             {
-                matrixc[i+(j*m)] += matrixa[i+(k*m)]*matrixb[k+(j*n)];
+                matrixc[i + (j * m)] += matrixa[i + (k * m)] * matrixb[k + (j * n)];
             }
         }
     }
@@ -58,8 +59,8 @@ void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, i
 
 double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int p)
 {
-    double diff= 0.0;
-    for (int i = 0; i < m*p; ++i)
+    double diff = 0.0;
+    for (int i = 0; i < m * p; ++i)
     {
         diff += abs(matrixa[i] - matrixb[i]);
     }
@@ -73,10 +74,10 @@ void ColMajor_Transpose(double *matrix, int m, int n)
     {
         for (int j = 0; j < n; j++)
         {
-            tmpmatrix[j+(i*n)] = matrix[i+(j*m)];
+            tmpmatrix[j + (i * n)] = matrix[i + (j * m)];
         }
     }
-    for (int i = 0; i < m*n; i++)
+    for (int i = 0; i < m * n; i++)
     {
         matrix[i] = tmpmatrix[i];
     }
@@ -91,7 +92,7 @@ void MakeZeroes(double *matrix, int m, int n)
     }
 }
 
-//Collect will create the big matrix based on submatrices
+// Collect will create the big matrix based on submatrices
 void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     int mm = m / 2;
@@ -108,26 +109,26 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
     {
         for (int j = pp; j < p; ++j)
         {
-            matrixc[i + (j * m)] += C12[i + ((j-pp) * mm)];
+            matrixc[i + (j * m)] += C12[i + ((j - pp) * mm)];
         }
     }
     for (int i = mm; i < m; ++i)
     {
         for (int j = 0; j < pp; ++j)
         {
-            matrixc[i + (j * m)] += C21[(i-mm) + (j * mm2)];
+            matrixc[i + (j * m)] += C21[(i - mm) + (j * mm2)];
         }
     }
     for (int i = mm; i < m; ++i)
     {
         for (int j = pp; j < p; ++j)
         {
-            matrixc[i + (j * m)] += C22[(i-mm) + ((j-pp) * mm2)];
+            matrixc[i + (j * m)] += C22[(i - mm) + ((j - pp) * mm2)];
         }
     }
 }
 
-//Initialize will Create the submatrices based on the big matrix
+// Initialize will Create the submatrices based on the big matrix
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     int mm = m / 2;
@@ -137,28 +138,28 @@ void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C2
     {
         for (int j = 0; j < pp; ++j)
         {
-            C11[i + (j * mm)] = matrixc[i + (j * m)] ;
+            C11[i + (j * mm)] = matrixc[i + (j * m)];
         }
     }
     for (int i = 0; i < mm; ++i)
     {
         for (int j = pp; j < p; ++j)
         {
-            C12[i + ((j-pp) * mm)] = matrixc[i + (j * m)];
+            C12[i + ((j - pp) * mm)] = matrixc[i + (j * m)];
         }
     }
     for (int i = mm; i < m; ++i)
     {
         for (int j = 0; j < pp; ++j)
         {
-            C21[(i-mm) + (j * mm2)] = matrixc[i + (j * m)];
+            C21[(i - mm) + (j * mm2)] = matrixc[i + (j * m)];
         }
     }
     for (int i = mm; i < m; ++i)
     {
         for (int j = pp; j < p; ++j)
         {
-            C22[(i-mm) + ((j-pp) * mm2)] = matrixc[i + (j * m)];
+            C22[(i - mm) + ((j - pp) * mm2)] = matrixc[i + (j * m)];
         }
     }
 }
@@ -172,9 +173,9 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
     // Then ->  do calculations by hand C = C + A*B
     // else COMPLETE RECURSE BLOCK
 
-    if (m<=recursion_limit or n<=recursion_limit or p<=recursion_limit)
+    if (m <= recursion_limit or n <= recursion_limit or p <= recursion_limit)
     {
-        NaiveMatrixMultiplyCol(matrixa, matrixb, matrixc,m,n,p);        
+        NaiveMatrixMultiplyCol(matrixa, matrixb, matrixc, m, n, p);
     }
     else
     {
@@ -184,7 +185,7 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
         int nn2 = n - nn;
         int pp = p / 2;
         int pp2 = p - pp;
-        
+
         double *A11 = (double *)malloc(mm * nn * sizeof(double));
         MakeZeroes(A11, mm, nn);
         double *A12 = (double *)malloc(mm * nn2 * sizeof(double));
@@ -211,26 +212,26 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
         MakeZeroes(C22, mm2, pp2);
 
         // Initializa Axx and Bxx matrices!
-        InitializeSubmatrices(matrixa, A11, A12, A21, A22, m,n);
-        InitializeSubmatrices(matrixb, B11, B12, B21, B22, n,p);
+        InitializeSubmatrices(matrixa, A11, A12, A21, A22, m, n);
+        InitializeSubmatrices(matrixb, B11, B12, B21, B22, n, p);
 
         // C11 is recurse1 and recurse2
-        MMMultRecursive(A11, B11, C11, mm, nn, pp,recursion_limit);
-        MMMultRecursive(A12, B21, C11, mm, nn2, pp,recursion_limit);
-                
+        MMMultRecursive(A11, B11, C11, mm, nn, pp, recursion_limit);
+        MMMultRecursive(A12, B21, C11, mm, nn2, pp, recursion_limit);
+
         // C12 is recurse3 and recurse4
-        MMMultRecursive(A11, B12, C12, mm,nn,pp2,recursion_limit);
-        MMMultRecursive(A12, B22, C12, mm,nn2,pp2,recursion_limit);
+        MMMultRecursive(A11, B12, C12, mm, nn, pp2, recursion_limit);
+        MMMultRecursive(A12, B22, C12, mm, nn2, pp2, recursion_limit);
         // C21 is recurse5 and recurse6
-        MMMultRecursive(A21, B11, C21, mm2,nn,pp,recursion_limit);
-        MMMultRecursive(A22, B21, C21, mm2,nn2,pp,recursion_limit);
+        MMMultRecursive(A21, B11, C21, mm2, nn, pp, recursion_limit);
+        MMMultRecursive(A22, B21, C21, mm2, nn2, pp, recursion_limit);
         // C22 is recurse7 and recurse8
-        MMMultRecursive(A21, B12, C22, mm2,nn,pp2,recursion_limit);
-        MMMultRecursive(A22, B22, C22, mm2,nn2,pp2,recursion_limit);
-        
+        MMMultRecursive(A21, B12, C22, mm2, nn, pp2, recursion_limit);
+        MMMultRecursive(A22, B22, C22, mm2, nn2, pp2, recursion_limit);
+
         // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
-        CollectSubmatrices(matrixc,C11,C12,C21,C22,m,p);
-        
+        CollectSubmatrices(matrixc, C11, C12, C21, C22, m, p);
+
         free(A11);
         free(A12);
         free(A21);
@@ -247,10 +248,10 @@ void MMMultRecursive(double *matrixa, double *matrixb, double *matrixc, int m, i
 }
 
 void InitVector(double *vectorB, int n)
-{   
+{
     for (int i = 0; i < n; i++)
     {
-        vectorB[i] = (double)((n-i+1)*(n-i+1));
+        vectorB[i] = (double)((n - i + 1) * (n - i + 1));
     }
 }
 
@@ -259,13 +260,13 @@ void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *ma
     for (int j = 0; j < n; j++)
     {
         for (int i = 0; i < n; i++)
-        {   
+        {
             double tempval = 0;
             for (int k = 0; k < i; k++)
             {
-                tempval += matrixL[i+k*n] * matrixSol[k+j*n];
+                tempval += matrixL[i + k * n] * matrixSol[k + j * n];
             }
-            matrixSol[j*n+i] = (matrixB[j*n+i] - tempval) / matrixL[i*n+i];
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixL[i * n + i];
         }
     }
 }
@@ -274,82 +275,119 @@ void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *ma
 {
     for (int j = 0; j < n; j++)
     {
-        for (int i = n-1; i >= 0; i--)
-        {   
+        for (int i = n - 1; i >= 0; i--)
+        {
             double tempval = 0;
-            for (int k = n-1; k > i; k--)
+            for (int k = n - 1; k > i; k--)
             {
-                tempval += matrixU[i+k*n] * matrixSol[k+j*n];
+                tempval += matrixU[i + k * n] * matrixSol[k + j * n];
             }
-            matrixSol[j*n+i] = (matrixB[j*n+i] - tempval) / matrixU[i*n+i];
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixU[i * n + i];
         }
     }
 }
 
-void LowerTriangularSolverRecursiveReal()
+void LowerTriangularSolverRecursiveReal(double *matrixL, double *matrixB, double *matrixSol, int n)
 {
+    // PHASE 1: RECURSE on calculations with TRIANGULAR A11
     
+    
+    
+    
+    // PHASE 2: CALCULATE THE NEW B's for next Phase 
+    // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+}
+
+void UpperTriangularSolverRecursiveReal(double *matrixU, double *matrixB, double *matrixSol, int n)
+{
 }
 
 /////////////////////////////     MAIN
-int main ( int argc, char* argv[] ) {
+int main(int argc, char *argv[])
+{
 
     if (argc != 6)
     {
         std::cerr << "Usage: " << argv[0] << " <filenameL> <filenameU> <filenameB> n recursion_limit" << std::endl;
         return 1;
     }
-    
-    const int n = std::atoi(argv[4]); // n
+
+    const int n = std::atoi(argv[4]);               // n
     const int recursion_limit = std::atoi(argv[5]); // depth of recursion
-    
-    // Create a vector to store the Column Major matrix data and another for the Row Major
+
+    // Input Matrices in Column Major Format
     double *matrixL = (double *)malloc(n * n * sizeof(double));
     double *matrixU = (double *)malloc(n * n * sizeof(double));
     double *matrixB = (double *)malloc(n * n * sizeof(double));
+    // Solution Matrices
     double *LowerMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
     double *LowerMatrixXsol = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsol = (double *)malloc(n * n * sizeof(double));
+    // Matrices to Calculate Error
     double *LowerCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
     double *UpperCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
-        
-    // Open the binary file for reading and handle error
+    double *LowerCalculatedB = (double *)malloc(n * n * sizeof(double));
+    double *UpperCalculatedB = (double *)malloc(n * n * sizeof(double));
+
+    // Open the binary file for reading INPUT Matrices and handle error
     std::ifstream inputA(argv[1], std::ios::binary);
     std::ifstream inputB(argv[2], std::ios::binary);
     std::ifstream inputC(argv[3], std::ios::binary);
-      if (!inputA or !inputB or !inputC){std::cerr << "Error: could not open file for reading" << std::endl; return 1;}
+    if (!inputA or !inputB or !inputC)
+    {
+        std::cerr << "Error: could not open file for reading" << std::endl;
+        return 1;
+    }
     // Read the binary data into the vector
     inputA.read(reinterpret_cast<char *>(matrixL), sizeof(double) * n * n);
     inputB.read(reinterpret_cast<char *>(matrixU), sizeof(double) * n * n);
     inputC.read(reinterpret_cast<char *>(matrixB), sizeof(double) * n * n);
-    // Check if read was successful and handle error 
-    if (!inputA or !inputB or !inputC) {std::cerr << "Error: could not read file" << std::endl; return 1;}
-    
+    // Check if read was successful and handle error
+    if (!inputA or !inputB or !inputC)
+    {
+        std::cerr << "Error: could not read file" << std::endl;
+        return 1;
+    }
+
     // Print the matrix elements
     cout << "\nMatrix L Print:\n";
-    PrintColMatrix(matrixL,n,n);
+    PrintColMatrix(matrixL, n, n);
     cout << "\nMatrix U Print:\n";
-    PrintColMatrix(matrixU,n,n);
+    PrintColMatrix(matrixU, n, n);
     cout << "\nMatrix B Print:\n";
-    PrintColMatrix(matrixB,n,n);
+    PrintColMatrix(matrixB, n, n);
 
     // Solve Naive
     LowerTriangularSolverNaiveReal(matrixL, matrixB, LowerMatrixXsolNaive, n);
     UpperTriangularSolverNaiveReal(matrixU, matrixB, UpperMatrixXsolNaive, n);
+
+    // Solve Recursive
+    LowerTriangularSolverRecursiveReal(matrixL, matrixB, LowerMatrixXsol, n);
+    UpperTriangularSolverRecursiveReal(matrixL, matrixB, UpperMatrixXsol, n);
+
+    // PRINT NAIVE Solutions
+    // cout << "\nLower Matrix X Solution Naive:\n";
+    // PrintColMatrix(LowerMatrixXsolNaive,n,n);
+    // cout << "\nUpper Matrix X Solution Naive:\n";
+    // PrintColMatrix(UpperMatrixXsolNaive,n,n);
+
+    // ERROR CALCULATION and display
+    // EXAMPLE with DGEMM : cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixL, n, LowerMatrixXsolNaive, n, 0.0, LowerCalculatedBNaive, n);
     NaiveMatrixMultiplyCol(matrixL, LowerMatrixXsolNaive, LowerCalculatedBNaive, n, n, n);
     NaiveMatrixMultiplyCol(matrixU, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
+    NaiveMatrixMultiplyCol(matrixL, LowerMatrixXsol, LowerCalculatedB, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU, UpperMatrixXsol, UpperCalculatedB, n, n, n);
 
-    //cout << "\nLower Matrix X Solution Naive:\n";
-    //PrintColMatrix(LowerMatrixXsolNaive,n,n);
-    //cout << "\nUpper Matrix X Solution Naive:\n";
-    //PrintColMatrix(UpperMatrixXsolNaive,n,n);
-
-    double Ldiffnaive=MatrixAbsDiff(matrixB,LowerCalculatedBNaive,n,n);
-    double Udiffnaive=MatrixAbsDiff(matrixB,UpperCalculatedBNaive,n,n);
+    double Ldiffnaive = MatrixAbsDiff(matrixB, LowerCalculatedBNaive, n, n);
+    double Udiffnaive = MatrixAbsDiff(matrixB, UpperCalculatedBNaive, n, n);
+    double Ldiff = MatrixAbsDiff(matrixB, LowerCalculatedB, n, n);
+    double Udiff = MatrixAbsDiff(matrixB, UpperCalculatedB, n, n);
 
     cout << "\nNaive Error (LX - B)-----------------> : " << Ldiffnaive << "\n";
     cout << "Naive Error (UX - B)-----------------> : " << Udiffnaive << "\n";
+    cout << "\nRecursive Error (LX - B)-----------------> : " << Ldiff << "\n";
+    cout << "Recursive Error (UX - B)-----------------> : " << Udiff << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
 
     //    LAPACK_zgesv();
@@ -364,5 +402,7 @@ int main ( int argc, char* argv[] ) {
     free(UpperMatrixXsol);
     free(LowerCalculatedBNaive);
     free(UpperCalculatedBNaive);
+    free(LowerCalculatedB);
+    free(UpperCalculatedB);
     return 0;
 }
