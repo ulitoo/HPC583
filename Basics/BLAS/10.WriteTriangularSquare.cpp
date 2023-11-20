@@ -109,16 +109,16 @@ int main(int argc, char *argv[])
     }
 
     // Print Matrix L Colum Major
-    cout << "\nmatrixL Print:\n";
-    PrintColMatrix(matrixL,n,n);
+    //cout << "\nmatrixL Print:\n";
+    //PrintColMatrix(matrixL,n,n);
     // Print Matrix U Colum Major
-    cout << "\nmatrixU Print:\n";
-    PrintColMatrix(matrixU,n,n);
+    //cout << "\nmatrixU Print:\n";
+    //PrintColMatrix(matrixU,n,n);
     // Print Matrix B Colum Major
-    cout << "\nmatrixB Print:\n";
-    PrintColMatrix(matrixB,n,n);
+    //cout << "\nmatrixB Print:\n";
+    //PrintColMatrix(matrixB,n,n);
 
-    cout << "\nMatrices correctly Created and written in file as ColMajor\n\n";
+    cout << "\nMatrices " << n <<" x " << n << " correctly Created and written in file as ColMajor\n\n";
 
     return 0;
 }
