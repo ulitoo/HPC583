@@ -45,6 +45,14 @@ void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, i
     }
 }
 
+void MakeZeroes(double *matrix, int m, int n)
+{
+    for (int i = 0; i < m * n; i++)
+    {
+        matrix[i] = 0.0;
+    }
+}
+
 double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int p)
 {
     double diff = 0.0;
@@ -53,6 +61,78 @@ double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int p)
         diff += abs(matrixa[i] - matrixb[i]);
     }
     return diff;
+}
+
+//Collect Results of Xxx to the big matrix X
+void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
+{
+    int mm = m / 2;
+    int mm2 = m - mm;
+    int pp = p / 2;
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            matrixc[i + (j * m)] += C11[i + (j * mm)];
+        }
+    }
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            matrixc[i + (j * m)] += C12[i + ((j-pp) * mm)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            matrixc[i + (j * m)] += C21[(i-mm) + (j * mm2)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            matrixc[i + (j * m)] += C22[(i-mm) + ((j-pp) * mm2)];
+        }
+    }
+}
+
+//Initialize will Create the submatrices based on the big matrix
+void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
+{
+    int mm = m / 2;
+    int mm2 = m - mm;
+    int pp = p / 2;
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            C11[i + (j * mm)] = matrixc[i + (j * m)] ;
+        }
+    }
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            C12[i + ((j-pp) * mm)] = matrixc[i + (j * m)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            C21[(i-mm) + (j * mm2)] = matrixc[i + (j * m)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            C22[(i-mm) + ((j-pp) * mm2)] = matrixc[i + (j * m)];
+        }
+    }
 }
 
 void ColMajor_Transpose(double *matrix, int m, int n)
@@ -222,6 +302,108 @@ void LowerTriangularSolverRecursiveReal(double *matrixL, int L_n1, int L_n2, dou
     }   
 }
 
+void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
+{
+    // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
+    recursion_count++;
+    if (n==1)
+    {
+        for (int j = 0; j < p; j++)
+        {
+            matrixX[j] = matrixB[j]/matrixU[0];
+        }
+    }
+    else
+    {
+        int nn = n / 2;
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+        
+        double *U11 = (double *)malloc(nn * nn * sizeof(double));
+        MakeZeroes(U11, nn, nn);
+        double *U12 = (double *)malloc(nn * nn2 * sizeof(double));
+        MakeZeroes(U12, nn, nn2);
+        double *U21 = (double *)malloc(nn2 * nn * sizeof(double));
+        MakeZeroes(U21, nn2, nn);
+        double *U22 = (double *)malloc(nn2 * nn2 * sizeof(double));
+        MakeZeroes(U22, nn2, nn2);
+        double *B11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(B11, nn, pp);
+        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(B12, nn, pp2);
+        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(B21, nn2, pp);
+        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(B22, nn2, pp2);
+        double *X11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(X11, nn, pp);
+        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(X12, nn, pp2);
+        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(X21, nn2, pp);
+        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(X22, nn2, pp2);
+
+        // Initializa Axx and Bxx matrices!
+        InitializeSubmatrices(matrixU, U11, U12, U21, U22, n,n);
+        InitializeSubmatrices(matrixB, B11, B12, B21, B22, n,p);
+
+        // Recurse U22 X21 = B21
+        UpperTriangularSolverRecursiveReal_0(U22,B21,X21,nn2,pp);
+        // Recurse U22 X22 = B22
+        UpperTriangularSolverRecursiveReal_0(U22,B22,X22,nn2,pp2);
+        
+        // PHASE 2: CALCULATE THE NEW B's for next Phase     
+        // B11' = B11 - U12 X21
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    B11[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X21[ k + (j) * nn2]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // Recurse U11 X11 = B11'
+        UpperTriangularSolverRecursiveReal_0(U11,B11,X11,nn,pp);
+
+        // B12' = B12 - U12 X22
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp2; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    B12[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X22[ k + (j) * nn2]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // Recurse U11 X12 = B12'
+        UpperTriangularSolverRecursiveReal_0(U11,B12,X12,nn,pp2);
+
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixX,X11,X12,X21,X22,n,p);
+        
+        free(U11);
+        free(U12);
+        free(U21);
+        free(U22);
+        free(B11);
+        free(B12);
+        free(B21);
+        free(B22);
+        free(X11);
+        free(X12);
+        free(X21);
+        free(X22);
+    }
+}
+
 void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, double *matrixB, int B_n1, int B_p1, double *matrixSol, int major_n, int n, int p)
 {
     recursion_count++;
@@ -229,18 +411,18 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
     // PHASE 1: RECURSE on calculations based on TRIANGULAR U22
     if (n == 1)
     {
-        for (int i = 0; i < p; i++)
+        for (int j = 0; j < p; j++)
         {
-            matrixSol[B_n1 + (B_p1+i)*major_n] = matrixB[B_n1 + (B_p1+i)*major_n]/matrixU[U_n1 + (U_n2)*major_n];
+            matrixSol[B_n1 + (B_p1+j)*major_n] = matrixB[B_n1 + (B_p1+j)*major_n]/matrixU[U_n1 + (U_n2)*major_n];
         }
     }
     else
     {
         int nn = n / 2;
-        int nn2 = n - nn; // Size of right or lower side covers for odd cases 
-        int pp = 1;
-        int pp2 = 0;
-        if (p>1) { pp = (p/2); pp2 = p - pp;}
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+        //if (p==1) { pp = 1; pp2 = 1;}
 
         // Recurse U22 X21 = B21
         UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
@@ -255,7 +437,7 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
             {
                 for (int k = 0; k < nn2; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + j) * major_n]);
+                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn2 + k + (B_p1 + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
@@ -271,7 +453,7 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
             {
                 for (int k = 0; k < nn2; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + pp + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + pp + j) * major_n]);
+                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + pp2 + k) * major_n]) * (matrixSol[B_n1 + nn2 + k + (B_p1 + pp2 + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
@@ -362,7 +544,7 @@ int main(int argc, char *argv[])
     // Solve Recursive
     LowerTriangularSolverRecursiveReal(matrixL,0,0,matrixB,0,0,LowerMatrixXsol,n,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
-    UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB,0,0,UpperMatrixXsol,n,n,p);
+    UpperTriangularSolverRecursiveReal_0(matrixU,matrixB,UpperMatrixXsol,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
  
     //Solve BLAS
