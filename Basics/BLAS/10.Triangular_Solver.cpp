@@ -250,18 +250,17 @@ void LowerTriangularSolverRecursiveReal(double *matrixL, int L_n1, int L_n2, dou
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
     {   
-        for (int i = 0; i < p; i++)
+        for (int j = 0; j < p; j++)
         {
-            matrixSol[B_n1 + (B_p1 + i)*major_n] = matrixB[B_n1 + (B_p1 + i)*major_n]/matrixL[L_n1 + L_n2*major_n];  
+            matrixSol[B_n1 + (B_p1 + j)*major_n] = matrixB[B_n1 + (B_p1 + j)*major_n]/matrixL[L_n1 + L_n2*major_n];  
         }
     }
     else
     {
         int nn = n / 2;
         int nn2 = n - nn; // Size of right or lower side covers for odd cases 
-        int pp = 1;
-        int pp2 = 0;
-        if (p>1) { pp = (p/2); pp2 = p - pp;}
+        int pp = (p/2); 
+        int pp2 = p - pp;
         
         // Recurse L11 X11 = B11
         LowerTriangularSolverRecursiveReal(matrixL,L_n1,L_n2,matrixB,B_n1,B_p1,matrixSol,major_n,nn,pp);
@@ -419,10 +418,9 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
     else
     {
         int nn = n / 2;
-        int nn2 = n - nn;
-        int pp = p / 2;
+        int nn2 = n - nn; // Size of right or lower side covers for odd cases 
+        int pp = (p/2); 
         int pp2 = p - pp;
-        //if (p==1) { pp = 1; pp2 = 1;}
 
         // Recurse U22 X21 = B21
         UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
@@ -437,7 +435,7 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
             {
                 for (int k = 0; k < nn2; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn2 + k + (B_p1 + j) * major_n]);
+                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
@@ -453,7 +451,7 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
             {
                 for (int k = 0; k < nn2; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + pp2 + k) * major_n]) * (matrixSol[B_n1 + nn2 + k + (B_p1 + pp2 + j) * major_n]);
+                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + pp + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
@@ -544,7 +542,7 @@ int main(int argc, char *argv[])
     // Solve Recursive
     LowerTriangularSolverRecursiveReal(matrixL,0,0,matrixB,0,0,LowerMatrixXsol,n,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
-    UpperTriangularSolverRecursiveReal_0(matrixU,matrixB,UpperMatrixXsol,n,p);
+    UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB,0,0,UpperMatrixXsol,n,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
  
     //Solve BLAS
