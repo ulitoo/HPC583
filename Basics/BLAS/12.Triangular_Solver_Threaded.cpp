@@ -469,6 +469,18 @@ void Rewrite_A_over_B(double *matrixA, double *matrixB, int n,int p)
     }
 }
 
+void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time,int n, int p)
+{
+    double *CalculatedB = (double *)malloc(n * p * sizeof(double));   
+    MakeZeroes(CalculatedB,n,p);
+    NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
+    double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
+
+    cout << "\nError (AX - B)-----------------> : " << diff << "\n";
+    std::cout << "Elapsed Time----------------> : " << elapsed_time << " s.\n\n";
+    free(CalculatedB);
+}
+
 /////////////////////////////     MAIN
 int main(int argc, char *argv[])
 {
@@ -493,15 +505,9 @@ int main(int argc, char *argv[])
     double *LowerMatrixXsol = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsol = (double *)malloc(n * n * sizeof(double));
+    double *UpperMatrixXsol2 = (double *)malloc(n * n * sizeof(double));
     double *LowerMatrixBLASsol = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixBLASsol = (double *)malloc(n * n * sizeof(double));
-    // Matrices to Calculate Error
-    double *LowerCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
-    double *UpperCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
-    double *LowerCalculatedB = (double *)malloc(n * n * sizeof(double));
-    double *UpperCalculatedB = (double *)malloc(n * n * sizeof(double));
-    double *LowerCalculatedBBLAS = (double *)malloc(n * n * sizeof(double));
-    double *UpperCalculatedBBLAS = (double *)malloc(n * n * sizeof(double));
 
     // Open the binary file for reading INPUT Matrices and handle error
     std::ifstream inputA(argv[1], std::ios::binary);
@@ -522,15 +528,8 @@ int main(int argc, char *argv[])
         std::cerr << "Error: could not read file" << std::endl;
         return 1;
     }
-
-    // Print the matrix elements of L U and B
-    //cout << "\nMatrix L Print:\n";
-    //PrintColMatrix(matrixL, n, n);
-    //cout << "\nMatrix U Print:\n";
-    //PrintColMatrix(matrixU, n, n);
-    //cout << "\nMatrix B Print:\n";
-    //PrintColMatrix(matrixB, n, n);
-
+    
+    // Save the matrices in original versions in case they get rewritten in some algorithms
     Rewrite_A_over_B(matrixB, matrixB_orig, n, p);
     Rewrite_A_over_B(matrixL, matrixL_orig, n, p);
     Rewrite_A_over_B(matrixU, matrixU_orig, n, p);
@@ -543,6 +542,8 @@ int main(int argc, char *argv[])
     LowerTriangularSolverRecursiveReal(matrixL,0,0,matrixB,0,0,LowerMatrixXsol,n,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
     UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB,0,0,UpperMatrixXsol,n,n,p);
+    Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
+    UpperTriangularSolverRecursiveReal_0(matrixU,matrixB,UpperMatrixXsol2,n,p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
  
     //Solve BLAS
@@ -557,39 +558,24 @@ int main(int argc, char *argv[])
     Rewrite_A_over_B(matrixB, UpperMatrixBLASsol, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
 
-    // PRINT NAIVE Solutions
-    //cout << "\nLower Matrix X Solution Naive:\n";
-    //PrintColMatrix(LowerMatrixXsolNaive,n,n);
-    //cout << "\nUpper Matrix X Solution Naive:\n";
-    //PrintColMatrix(UpperMatrixXsolNaive,n,n);
+    long double elapsed_time = 0.0;
 
-    // PRINT Recurse Solutions
-    //cout << "\nLower Matrix X Solution Recurse:\n";
-    //PrintColMatrix(LowerMatrixXsol,n,n);
-    //cout << "\nUpper Matrix X Solution Recurse:\n";
-    //PrintColMatrix(UpperMatrixXsol,n,n);
-    
     // ERROR CALCULATION and display
-    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsolNaive, LowerCalculatedBNaive, n, n, n);
-    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
-    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsol, LowerCalculatedB, n, n, n);
-    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsol, UpperCalculatedB, n, n, n);
-    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixBLASsol, LowerCalculatedBBLAS, n, n, n);
-    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixBLASsol, UpperCalculatedBBLAS, n, n, n);
+    cout << "Naive Lower MATRIX: ";
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsolNaive, elapsed_time, n, p);
+    cout << "Naive Upper MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsolNaive, elapsed_time, n, p);
+    cout << "Recursive Lower MATRIX: ";
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsol, elapsed_time, n, p);
+    cout << "Recursive Upper MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol, elapsed_time, n, p);
+    cout << "Recursive Upper (Malloc included) MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol2, elapsed_time, n, p);
+    cout << "BLAS (dgesv) Lower MATRIX: ";
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixBLASsol, elapsed_time, n, p);
+    cout << "BLAS (dgesv) Upper MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixBLASsol, elapsed_time, n, p);
 
-    double Ldiffnaive = MatrixAbsDiff(matrixB_orig, LowerCalculatedBNaive, n, n);
-    double Udiffnaive = MatrixAbsDiff(matrixB_orig, UpperCalculatedBNaive, n, n);
-    double Ldiff = MatrixAbsDiff(matrixB_orig, LowerCalculatedB, n, n);
-    double Udiff = MatrixAbsDiff(matrixB_orig, UpperCalculatedB, n, n);
-    double LdiffBLAS = MatrixAbsDiff(matrixB_orig, LowerCalculatedBBLAS, n, n);
-    double UdiffBLAS = MatrixAbsDiff(matrixB_orig, UpperCalculatedBBLAS, n, n);
-
-    cout << "\nNaive Error (LX - B)-----------------> : " << Ldiffnaive << "\n";
-    cout << "Naive Error (UX - B)-----------------> : " << Udiffnaive << "\n";
-    cout << "\nRecursive Error (LX - B)-----------------> : " << Ldiff << "\n";
-    cout << "Recursive Error (UX - B)-----------------> : " << Udiff << "\n";
-    cout << "\nBLAS Error (LX - B)-----------------> : " << LdiffBLAS << "\n";
-    cout << "BLAS Error (UX - B)-----------------> : " << UdiffBLAS << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
 
     //    Compare with Real solver from LAPACK LAPACK_dgesv();

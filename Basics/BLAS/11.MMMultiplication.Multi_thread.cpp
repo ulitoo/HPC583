@@ -512,34 +512,33 @@ void MMMultRecursive3Threaded(double *matrixa, int matrixa_m, int a_m1, int a_n1
         int pp = p / 2;
         int pp2 = p - pp;
 
-        // C11 is recurse1 and recurse2
+        // C11 is recurse1 
         std::thread threadC11_1(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn, pp, recursion_limit);
-        std::thread threadC11_2(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn2, pp, recursion_limit);
-
-        // C12 is recurse3 and recurse4
+        // C12 is recurse3 
         std::thread threadC12_1(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn, pp2, recursion_limit);
-        std::thread threadC12_2(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn2, pp2, recursion_limit);
-
-        // C21 is recurse5 and recurse6
+        // C21 is recurse5 
         std::thread threadC21_1(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn, pp, recursion_limit);
-        std::thread threadC21_2(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn2, pp, recursion_limit);
-
-        // C22 is recurse7 and recurse8
+        // C22 is recurse7 
         std::thread threadC22_1(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn, pp2, recursion_limit);
-        std::thread threadC22_2(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn2, pp2, recursion_limit);
-    
+
         threadC11_1.join();
-        threadC11_2.join();
         threadC12_1.join();
-        threadC12_2.join();
         threadC21_1.join();
-        threadC21_2.join();
         threadC22_1.join();
+
+        std::thread threadC11_2(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn2, pp, recursion_limit);
+        std::thread threadC12_2(MMMultRecursive3,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn2, pp2, recursion_limit);
+        std::thread threadC21_2(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn2, pp, recursion_limit);
+        std::thread threadC22_2(MMMultRecursive3,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn2, pp2, recursion_limit);
+
+        threadC11_2.join();
+        threadC12_2.join();
+        threadC21_2.join();
         threadC22_2.join();
     }
 }
 
-void MMMultRecursive3ThreadedW(double *matrixa, int matrixa_m, int a_m1, int a_n1, double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int matrixc_m, int c_m1, int c_p1, int m, int n, int p, int recursion_limit) 
+void MMMultRecursive3ThreadedWrapper(double *matrixa, int matrixa_m, int a_m1, int a_n1, double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int matrixc_m, int c_m1, int c_p1, int m, int n, int p, int recursion_limit) 
 {
     //MMMultRecursive3Threaded(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, m, n, p, recursion_limit);
     MMMultRecursive3Threaded(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, m, n, p, recursion_limit);
@@ -601,8 +600,19 @@ int main ( int argc, char* argv[] ) {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time = (duration.count() * 1.e-9);
-    std::cout << "\nElapsed Time Threaded: " << elapsed_time << " s.\n";
+    std::cout << "\nElapsed Time Threaded Recursive( w malloc ): " << elapsed_time << " s.\n";
 
+    MakeZeroes(matrixC,m,p);
+
+    start = std::chrono::high_resolution_clock::now();
+ 
+    MMMultRecursive3Threaded(matrixA,m,0,0 ,matrixB,n,0,0, matrixC,m,0,0,m,n,p,recursion_limit);
+   
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    long double elapsed_time3 = (duration.count() * 1.e-9);
+    std::cout << "Elapsed Time Threaded Recursive3 (Clean non malloc): " << elapsed_time3 << " s.\n";
+    
     
     MakeZeroes(matrixC,m,p);
 
@@ -613,19 +623,23 @@ int main ( int argc, char* argv[] ) {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double elapsed_time2 = (duration.count() * 1.e-9);
-    std::cout << "\nElapsed Time Non Threaded Recursive: " << elapsed_time2 << " s.\n";
-    
+    std::cout << "Elapsed Time Non Threaded Recursive3(Clean): " << elapsed_time2 << " s.\n";
 
+    start = std::chrono::high_resolution_clock::now();
     // Naive Calculation of product to compare with recursive version
-    //NaiveMatrixMultiplyCol(matrixA,matrixB,matrixC_test,m,n,p);
+    NaiveMatrixMultiplyCol(matrixA,matrixB,matrixC_test,m,n,p);
     //cout << "\nMatrix Ctest Naive:" << std::endl;
     //PrintColMatrix (matrixC_test,m,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    long double elapsed_timeNAIVE = (duration.count() * 1.e-9);
+    std::cout << "Elapsed Time Non Threaded Naive: " << elapsed_timeNAIVE << " s.\n";
 
-    //double diff=MatrixAbsDiff(matrixC_test,matrixC,m,p);
+    double diff=MatrixAbsDiff(matrixC_test,matrixC,m,p);
 
-    //std::cout << "\nABS Error (C - Ctest)-----------------> : " << diff << "\n";
+    std::cout << "\nABS Error (C - Ctest)-----------------> : " << diff << "\n";
     std::cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
-    std::cout << "\nSpeedup -----------------> : x" << elapsed_time2/elapsed_time << "\n\n";
+    std::cout << "Speedup Thread1 vs Non-Thread -----------------> : x" << elapsed_time2/elapsed_time << "\n\n";
 
     free(matrixA);
     free(matrixB);
