@@ -5,6 +5,8 @@
 #include <vector>
 #include <cmath>
 #include <fstream>
+#include <pthread.h>
+#include <thread>
 
 using namespace std;
 
@@ -14,6 +16,9 @@ using namespace std;
 // then calculate distance (error from Ax to b)
 // Compare Timing with dgesv (double real)/ zgesv (complex)
 // SCOPE for REAL (double) First and leave COMPLEX case for next iteration
+//    Compare with Real solver from LAPACK LAPACK_dgesv();
+//    LAPACK_zgesv() is Complex Solver
+//    You can compare your results to the *getrf() LU based solver *gesv()
 
 int recursion_count = 0;
 
@@ -301,6 +306,112 @@ void LowerTriangularSolverRecursiveReal(double *matrixL, int L_n1, int L_n2, dou
     }   
 }
 
+void UpperTriangularSolverRecursiveReal_0T(double *matrixU, double *matrixB, double *matrixX, int n, int p)
+{
+    // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
+    recursion_count++;
+    if (n==1)
+    {
+        for (int j = 0; j < p; j++)
+        {
+            matrixX[j] = matrixB[j]/matrixU[0];
+        }
+    }
+    else
+    {
+        int nn = n / 2;
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+        
+        double *U11 = (double *)malloc(nn * nn * sizeof(double));
+        MakeZeroes(U11, nn, nn);
+        double *U12 = (double *)malloc(nn * nn2 * sizeof(double));
+        MakeZeroes(U12, nn, nn2);
+        double *U21 = (double *)malloc(nn2 * nn * sizeof(double));
+        MakeZeroes(U21, nn2, nn);
+        double *U22 = (double *)malloc(nn2 * nn2 * sizeof(double));
+        MakeZeroes(U22, nn2, nn2);
+        double *B11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(B11, nn, pp);
+        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(B12, nn, pp2);
+        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(B21, nn2, pp);
+        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(B22, nn2, pp2);
+        double *X11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(X11, nn, pp);
+        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(X12, nn, pp2);
+        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(X21, nn2, pp);
+        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(X22, nn2, pp2);
+
+        // Initializa Axx and Bxx matrices!
+        InitializeSubmatrices(matrixU, U11, U12, U21, U22, n,n);
+        InitializeSubmatrices(matrixB, B11, B12, B21, B22, n,p);
+
+        // Recurse U22 X21 = B21
+        std::thread TX21(UpperTriangularSolverRecursiveReal_0T,U22,B21,X21,nn2,pp);
+        // Recurse U22 X22 = B22
+        std::thread TX22(UpperTriangularSolverRecursiveReal_0T,U22,B22,X22,nn2,pp2);
+        
+        TX21.join();
+        // PHASE 2: CALCULATE THE NEW B's for next Phase     
+        // B11' = B11 - U12 X21
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    B11[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X21[ k + (j) * nn2]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // Recurse U11 X11 = B11'
+        std::thread TX11(UpperTriangularSolverRecursiveReal_0T,U11,B11,X11,nn,pp);
+        
+        TX22.join();
+        // B12' = B12 - U12 X22
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp2; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    B12[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X22[ k + (j) * nn2]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // Recurse U11 X12 = B12'
+        std::thread TX12(UpperTriangularSolverRecursiveReal_0T,U11,B12,X12,nn,pp2);
+        TX11.join();
+        TX12.join();
+       
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixX,X11,X12,X21,X22,n,p);
+        
+        free(U11);
+        free(U12);
+        free(U21);
+        free(U22);
+        free(B11);
+        free(B12);
+        free(B21);
+        free(B22);
+        free(X11);
+        free(X12);
+        free(X21);
+        free(X22);
+    }
+}
+
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
@@ -369,7 +480,7 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
         // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
         // Recurse U11 X11 = B11'
         UpperTriangularSolverRecursiveReal_0(U11,B11,X11,nn,pp);
-
+        
         // B12' = B12 - U12 X22
         for (int i = 0; i < nn; ++i)
         {
@@ -384,7 +495,7 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
         }
         // Recurse U11 X12 = B12'
         UpperTriangularSolverRecursiveReal_0(U11,B12,X12,nn,pp2);
-
+    
         // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
         CollectSubmatrices(matrixX,X11,X12,X21,X22,n,p);
         
@@ -492,6 +603,11 @@ int main(int argc, char *argv[])
 
     const int n = std::atoi(argv[4]);               // n
     const int p = n;                                // Note we should allow P to be higher or lower than n!!!! (LATER)
+    // Timing constants
+    auto start = std::chrono::high_resolution_clock::now();
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    long double Speedup;
 
     // Input Matrices in Column Major Format
     double *matrixL = (double *)malloc(n * n * sizeof(double));
@@ -535,52 +651,68 @@ int main(int argc, char *argv[])
     Rewrite_A_over_B(matrixU, matrixU_orig, n, p);
 
     // Solve Naive
+    start = std::chrono::high_resolution_clock::now();
     LowerTriangularSolverNaiveReal(matrixL, matrixB, LowerMatrixXsolNaive, n);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Naive Lower MATRIX: ";
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsolNaive, duration.count() * 1.e-9, n, p);
     UpperTriangularSolverNaiveReal(matrixU, matrixB, UpperMatrixXsolNaive, n);
+    start = stop;
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Naive Upper MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsolNaive, duration.count() * 1.e-9, n, p);
 
     // Solve Recursive
+    start = stop;
     LowerTriangularSolverRecursiveReal(matrixL,0,0,matrixB,0,0,LowerMatrixXsol,n,n,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    Speedup = duration.count();
+    cout << "Recursive Lower MATRIX: ";
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsol, duration.count() * 1.e-9, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
+    
+    start = std::chrono::high_resolution_clock::now();
     UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB,0,0,UpperMatrixXsol,n,n,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Recursive Upper MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol, duration.count() * 1.e-9, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
+    
+    start = std::chrono::high_resolution_clock::now();
     UpperTriangularSolverRecursiveReal_0(matrixU,matrixB,UpperMatrixXsol2,n,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    cout << "Recursive Upper (Malloc included) MATRIX: ";
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol2, duration.count() * 1.e-9, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
  
     //Solve BLAS
     int INFO;
     int IPIV[n];
+    start = std::chrono::high_resolution_clock::now();
     LAPACK_dgesv(&n,&p,matrixL,&n,IPIV,matrixB,&n,&INFO);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    cout << "BLAS (dgesv) Lower MATRIX: ";
     Rewrite_A_over_B(matrixB, LowerMatrixBLASsol, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
-    int INFO2;
-    int IPIV2[n];
-    LAPACK_dgesv(&n,&p,matrixU,&n,IPIV2,matrixB,&n,&INFO2);
+    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixBLASsol, duration.count() * 1.e-9, n, p);
+    cout << "Lower Triangular Speedup: " << Speedup/duration.count() << "x.\n\n";
+
+    start = std::chrono::high_resolution_clock::now();
+    LAPACK_dgesv(&n,&p,matrixU,&n,IPIV,matrixB,&n,&INFO);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    cout << "BLAS (dgesv) Upper MATRIX: ";
     Rewrite_A_over_B(matrixB, UpperMatrixBLASsol, n, p);
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
-
-    long double elapsed_time = 0.0;
-
-    // ERROR CALCULATION and display
-    cout << "Naive Lower MATRIX: ";
-    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsolNaive, elapsed_time, n, p);
-    cout << "Naive Upper MATRIX: ";
-    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsolNaive, elapsed_time, n, p);
-    cout << "Recursive Lower MATRIX: ";
-    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixXsol, elapsed_time, n, p);
-    cout << "Recursive Upper MATRIX: ";
-    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol, elapsed_time, n, p);
-    cout << "Recursive Upper (Malloc included) MATRIX: ";
-    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixXsol2, elapsed_time, n, p);
-    cout << "BLAS (dgesv) Lower MATRIX: ";
-    ErrorCalc_Display(matrixL_orig, matrixB_orig, LowerMatrixBLASsol, elapsed_time, n, p);
-    cout << "BLAS (dgesv) Upper MATRIX: ";
-    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixBLASsol, elapsed_time, n, p);
+    ErrorCalc_Display(matrixU_orig, matrixB_orig, UpperMatrixBLASsol, duration.count() * 1.e-9, n, p);
 
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
-
-    //    Compare with Real solver from LAPACK LAPACK_dgesv();
-    //    LAPACK_zgesv() is Complex Solver
-    //    You can compare your results to the *getrf() LU based solver *gesv()
 
    return 0;
 }
