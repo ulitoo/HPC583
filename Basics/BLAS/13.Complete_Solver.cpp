@@ -565,13 +565,14 @@ int main ( int argc, char* argv[] ) {
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
+    auto stop1 = std::chrono::high_resolution_clock::now();
+    auto stop2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double Speedup;
 
     // Alloc Space for Matrices Needed in Column Major Order
     double *matrixA = (double *)malloc(n * n * sizeof(double));
     double *matrixB = (double *)malloc(n * n * sizeof(double));
-    double *matrixLU = (double *)malloc(n * n * sizeof(double));
     double *matrixL = (double *)malloc(n * n * sizeof(double));
     double *matrixU = (double *)malloc(n * n * sizeof(double));
     double *matrixY = (double *)malloc(n * n * sizeof(double));
@@ -589,21 +590,37 @@ int main ( int argc, char* argv[] ) {
     Write_A_over_B(matrixA,matrixA_original,n,n);
     Write_A_over_B(matrixB,matrixB_original,n,n);
     
+    // ----------------- Start Algorithm HERE!
+
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for A
     LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);
     // We might need LATER LUdecompositionRecursive to have JUST one Matrix LU
-
+    stop1 = std::chrono::high_resolution_clock::now();
+    
     // Now Solve system of linear equations given AX=B given B is n x n
     // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
     // Solve (1) LY=B
     LowerTriangularSolverRecursiveReal_0(matrixL,matrixB,matrixY,n,n);
+    stop2 = std::chrono::high_resolution_clock::now();
     // Solve (2) UX=Y
     UpperTriangularSolverRecursiveReal_0(matrixU,matrixY,matrixX,n,n);
     stop = std::chrono::high_resolution_clock::now();
+    
+    // ---------------- Done! Now to Show the Results and Compare with BLAS
+
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
+    cout << "LU decomposition: " << (duration.count() * 1.e-9) << " s.\n";
+    
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop2 - stop1);
+    cout << "Lower Solve: " << (duration.count() * 1.e-9) << " s.\n";
+    
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - stop2);
+    cout << "Upper Solve: " << (duration.count() * 1.e-9) << " s.\n";
+        
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     Speedup = duration.count();
-    cout << "Check Accuracy and time of my AX=B:";
+    cout << "\nCheck Accuracy and time of my AX=B:";
     ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, duration.count() * 1.e-9,n,n,recursion_limit);
 
     Write_A_over_B(matrixA_original,matrixA,n,n);
