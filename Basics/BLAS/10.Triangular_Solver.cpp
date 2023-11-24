@@ -243,6 +243,64 @@ double GetSubMatrixValue(double *matrixa,int n,int n1,int p1, int i, int j)
     return matrixa[n1 + i + (p1+j)*n];
 }
 
+void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, double *matrixB, int B_n1, int B_p1, double *matrixSol, int major_n, int n, int p)
+{
+    recursion_count++;
+    // cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
+    // PHASE 1: RECURSE on calculations based on TRIANGULAR U22
+    if (n == 1)
+    {
+        for (int j = 0; j < p; j++)
+        {
+            matrixSol[B_n1 + (B_p1+j)*major_n] = matrixB[B_n1 + (B_p1+j)*major_n]/matrixU[U_n1 + (U_n2)*major_n];
+        }
+    }
+    else
+    {
+        int nn = n / 2;
+        int nn2 = n - nn; // Size of right or lower side covers for odd cases 
+        int pp = (p/2); 
+        int pp2 = p - pp;
+
+        // Recurse U22 X21 = B21
+        UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
+        // Recurse U22 X22 = B22
+        UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1+pp,matrixSol,major_n,nn2,pp2);
+    
+        // PHASE 2: CALCULATE THE NEW B's for next Phase     
+        // B11' = B11 - U12 X21
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + j) * major_n]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // Recurse U11 X11 = B11'
+        UpperTriangularSolverRecursiveReal(matrixU,U_n1,U_n2,matrixB,B_n1,B_p1,matrixSol,major_n,nn,pp);
+
+        // B12' = B12 - U12 X22
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp2; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + pp + j) * major_n]);
+                    // A(i,k)*B(k,j)
+                }
+            }
+        }
+        // Recurse U11 X12 = B12'
+        UpperTriangularSolverRecursiveReal(matrixU,U_n1,U_n2,matrixB,B_n1,B_p1+pp,matrixSol,major_n,nn,pp2);
+    }   
+}
+
 void LowerTriangularSolverRecursiveReal(double *matrixL, int L_n1, int L_n2, double *matrixB, int B_n1, int B_p1, double *matrixSol, int major_n, int n, int p)
 {
     recursion_count++;
@@ -403,16 +461,17 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
     }
 }
 
-void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, double *matrixB, int B_n1, int B_p1, double *matrixSol, int major_n, int n, int p)
+void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, double *matrixX, int n, int p)
 {
     recursion_count++;
-    // cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
-    // PHASE 1: RECURSE on calculations based on TRIANGULAR U22
+    //cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
+    // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
-    {
+    {   
         for (int j = 0; j < p; j++)
         {
-            matrixSol[B_n1 + (B_p1+j)*major_n] = matrixB[B_n1 + (B_p1+j)*major_n]/matrixU[U_n1 + (U_n2)*major_n];
+            matrixX[j] = matrixB[j]/matrixL[0];
+            //matrixSol[B_n1 + (B_p1 + j)*major_n] = matrixB[B_n1 + (B_p1 + j)*major_n]/matrixL[L_n1 + L_n2*major_n];  
         }
     }
     else
@@ -422,42 +481,93 @@ void UpperTriangularSolverRecursiveReal(double *matrixU, int U_n1, int U_n2, dou
         int pp = (p/2); 
         int pp2 = p - pp;
 
-        // Recurse U22 X21 = B21
-        UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
-        // Recurse U22 X22 = B22
-        UpperTriangularSolverRecursiveReal(matrixU,U_n1+nn,U_n2+nn,matrixB,B_n1+nn,B_p1+pp,matrixSol,major_n,nn2,pp2);
+        double *L11 = (double *)malloc(nn * nn * sizeof(double));
+        MakeZeroes(L11, nn, nn);
+        double *L12 = (double *)malloc(nn * nn2 * sizeof(double));
+        MakeZeroes(L12, nn, nn2);
+        double *L21 = (double *)malloc(nn2 * nn * sizeof(double));
+        MakeZeroes(L21, nn2, nn);
+        double *L22 = (double *)malloc(nn2 * nn2 * sizeof(double));
+        MakeZeroes(L22, nn2, nn2);
+        double *B11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(B11, nn, pp);
+        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(B12, nn, pp2);
+        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(B21, nn2, pp);
+        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(B22, nn2, pp2);
+        double *X11 = (double *)malloc(nn * pp * sizeof(double));
+        MakeZeroes(X11, nn, pp);
+        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
+        MakeZeroes(X12, nn, pp2);
+        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
+        MakeZeroes(X21, nn2, pp);
+        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        MakeZeroes(X22, nn2, pp2);
+        
+        // Initializa Axx and Bxx matrices!
+        InitializeSubmatrices(matrixL, L11, L12, L21, L22, n,n);
+        InitializeSubmatrices(matrixB, B11, B12, B21, B22, n,p);
+
+        // Recurse L11 X11 = B11
+        LowerTriangularSolverRecursiveReal_0(L11,B11,X11,nn,pp);
+        //LowerTriangularSolverRecursiveReal(matrixL,L_n1,L_n2,matrixB,B_n1,B_p1,matrixSol,major_n,nn,pp);
+        // Recurse L11 X12 = B12
+        LowerTriangularSolverRecursiveReal_0(L11,B12,X12,nn,pp2);
+        //LowerTriangularSolverRecursiveReal(matrixL,L_n1,L_n2,matrixB,B_n1,B_p1+pp,matrixSol,major_n,nn,pp2);
     
         // PHASE 2: CALCULATE THE NEW B's for next Phase     
-        // B11' = B11 - U12 X21
-        for (int i = 0; i < nn; ++i)
+        // B21' = B21 - L21 X11
+        for (int i = 0; i < nn2; ++i)
         {
             for (int j = 0; j < pp; ++j)
             {
-                for (int k = 0; k < nn2; ++k)
+                for (int k = 0; k < nn; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + j) * major_n]);
+                    B21[i + (j*nn2)] -= (L21[i + (k*nn2)]) * (X11[ k + (j) * nn]);
+                    //matrixB[B_n1 + nn + i + ((B_p1 + j) * major_n)] -= (matrixL[L_n1 + nn + i + (L_n2 + k) * major_n]) * (matrixSol[B_n1 + k + (B_p1 + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
         }
         // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
-        // Recurse U11 X11 = B11'
-        UpperTriangularSolverRecursiveReal(matrixU,U_n1,U_n2,matrixB,B_n1,B_p1,matrixSol,major_n,nn,pp);
+        // Recurse L22 X21 = B21'
+        LowerTriangularSolverRecursiveReal_0(L22,B21,X21,nn2,pp);
+        //LowerTriangularSolverRecursiveReal(matrixL,L_n1+nn,L_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
 
-        // B12' = B12 - U12 X22
-        for (int i = 0; i < nn; ++i)
+        // B22' = B22 - L21 X12
+        for (int i = 0; i < nn2; ++i)
         {
             for (int j = 0; j < pp2; ++j)
             {
-                for (int k = 0; k < nn2; ++k)
+                for (int k = 0; k < nn; ++k)
                 {
-                    matrixB[B_n1 + i + ((B_p1 + pp + j) * major_n)] -= (matrixU[U_n1 + i + (U_n2 + nn + k) * major_n]) * (matrixSol[B_n1 + nn + k + (B_p1 + pp + j) * major_n]);
+                    B22[i + (j*nn2)] -= (L21[i + (k*nn2)]) * (X12[ k + (j) * nn]);
+                    //matrixB[B_n1 + nn + i + ((B_p1 + pp + j) * major_n)] -= (matrixL[L_n1 + nn + i + (L_n2 + k) * major_n]) * (matrixSol[B_n1 + k + (B_p1 + pp + j) * major_n]);
                     // A(i,k)*B(k,j)
                 }
             }
         }
-        // Recurse U11 X12 = B12'
-        UpperTriangularSolverRecursiveReal(matrixU,U_n1,U_n2,matrixB,B_n1,B_p1+pp,matrixSol,major_n,nn,pp2);
+        // Recurse L22 X22 = B22'
+        LowerTriangularSolverRecursiveReal_0(L22,B22,X22,nn2,pp2);
+        //LowerTriangularSolverRecursiveReal(matrixL,L_n1+nn,L_n2+nn,matrixB,B_n1+nn,B_p1+pp,matrixSol,major_n,nn2,pp2);
+
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixX,X11,X12,X21,X22,n,p);
+        
+        free(L11);
+        free(L12);
+        free(L21);
+        free(L22);
+        free(B11);
+        free(B12);
+        free(B21);
+        free(B22);
+        free(X11);
+        free(X12);
+        free(X21);
+        free(X22);
     }   
 }
 
