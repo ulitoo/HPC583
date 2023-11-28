@@ -150,14 +150,13 @@ void TransposeColMajor(double *matrix, int m, int n)
         }
     }
 }
-
-void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p, int recursion_limit)
+void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
 {
     double *CalculatedB = (double *)malloc(n * p * sizeof(double));
     MakeZeroes(CalculatedB, n, p);
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM 
-    // MMMultRecursive3Threaded(matrixA, n, 0, 0, matrixX, n, 0, 0, CalculatedB, n, 0, 0, n, n, n, recursion_limit);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
     double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
 
     cout << "\nError (AX - B):----------------> : " << diff << "\n";
@@ -197,7 +196,6 @@ int main(int argc, char *argv[])
     double *matrixB_Calc = (double *)malloc(n * n * sizeof(double));
     double *matrixA_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
     double *matrixB_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
-    int recursion_limit = 64;
 
     // Read Matrix A and B from arguments and files
     Read_Matrix_file(matrixA, n * n, argv[1]);
@@ -211,7 +209,7 @@ int main(int argc, char *argv[])
 
     start = std::chrono::high_resolution_clock::now();
 
-// SOLVE LAPACK
+    // SOLVE LAPACK
 
     stop1 = std::chrono::high_resolution_clock::now();
 
@@ -231,24 +229,24 @@ int main(int argc, char *argv[])
     cout << "Upper Solve: " << (duration.count() * 1.e-9) << " s.\n";
 
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    Speedup = duration.count();
-    cout << "\nCheck Accuracy and time of my AX=B:";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, duration.count() * 1.e-9, n, n, recursion_limit);
+    //Speedup = duration.count();
+    //cout << "\nCheck Accuracy and time of my AX=B:";
+    //ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, duration.count() * 1.e-9, n, n, recursion_limit);
 
     Write_A_over_B(matrixA_original, matrixA, n, n);
     Write_A_over_B(matrixB_original, matrixB, n, n);
 
-    // Solve BLAS and compare with my implementation
+    // Solve BLAS complete 100%
     int INFO;
     int IPIV[n];
     start = std::chrono::high_resolution_clock::now();
     LAPACK_dgesv(&n, &n, matrixA, &n, IPIV, matrixB, &n, &INFO);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    cout << "Check Accuracy and time of BLAS (dgesv): ";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, duration.count() * 1.e-9, n, n, recursion_limit);
+    cout << "\nCheck Accuracy and time of Complete BLAS Solver (dgesv): ";
+    ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, duration.count() * 1.e-9, n, n);
 
-    cout << "Solution Calculation Speedup from BLAS to mine: " << Speedup / duration.count() << "x.\n\n";
+    //cout << "Solution Calculation Speedup from BLAS to mine: " << Speedup / duration.count() << "x.\n\n";
 
     return 0;
 
