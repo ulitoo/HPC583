@@ -284,17 +284,6 @@ int main(int argc, char *argv[])
     cout << "\nCheck Accuracy and time of PLU=A : ";
     ErrorCalc_Display(matrixP, matrixA_original, matrixLU, duration.count() * 1.e-9, n, n);
 
-  
-//    PrintColMatrix(matrixA_original,n,n);
-//    PrintColMatrix(matrixL,n,n);
-//    PrintColMatrix(matrixU,n,n);
-//    PrintColMatrix(matrixP,n,n);
-//    PrintColMatrix(matrixLU,n,n);
-//  cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixLU, n, 0.0, matrixLU, n);
-//    cout << "\n";
-//    PrintColMatrix(matrixLU,n,n);
-
-
     // Now Solve system of linear equations given AX=B given B is n x n
     // Solve AX=B -> PLUX=B -> LUX=P(inv)*B -> (2) UX=Y -> (1) LY=P(inv)*B
     // Solve (1) LY=P(inv)*B
@@ -314,10 +303,6 @@ int main(int argc, char *argv[])
    
     cout << "\nCheck Accuracy and time of sequenced LU+Lsolve+Usolve -> AX=B:";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixB_Calc, duration.count() * 1.e-9, n, n);
-
-    //Write_A_over_B(matrixA_original, matrixA, n, n);
-    //Write_A_over_B(matrixB_original, matrixB, n, n);
-    //cout << "Solution Calculation Speedup from BLAS to mine: " << Speedup / duration.count() << "x.\n\n";
 
     return 0;
 
