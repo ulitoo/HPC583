@@ -110,6 +110,15 @@ double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
     }
     return diff;
 }
+double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
+{
+    double diff = 0.0;
+    for (int i = 0; i < m * n; ++i)
+    {
+        diff += (matrixa[i] - matrixb[i])*(matrixa[i] - matrixb[i]);
+    }
+    return sqrt(diff);
+}
 void Write_A_over_B(double *matrixA, double *matrixB, int m, int n)
 {
     for (int i = 0; i < m * n; i++)
@@ -156,12 +165,50 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
     MakeZeroes(CalculatedB, n, p);
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
     double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
-
-    cout << "\nError (AX - B):----------------> : " << diff << "\n";
+    double dist = MatrixDistance(matrixB, CalculatedB, n, p);
+    cout << "\nAbs cumulative Error (AX - B):----------------> : " << diff << "\n";
+    cout << "Vector Distance (AX - B):---------------------> : " << dist << "\n";
     cout << "Elapsed Time:------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
+}
+void From_A_to_PLU(double *A, int *ipiv, int n, double *L, double *U, double *P)
+{
+    int tmpPinv[n];
+
+    for (int i = 0; i < n; i++)
+    {
+        tmpPinv[i] = i;
+    }
+    for (int i = 0; i < n; i++)
+    {
+        int tmp;
+        // swap (tmpPinv [ipiv [i]], tmpPinv[i] ) and it is off by one
+        tmp = tmpPinv[ipiv[i] - 1];
+        tmpPinv[ipiv[i] - 1] = tmpPinv[i];
+        tmpPinv[i] = tmp;
+    }
+
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < n; ++j)
+        {
+            if (i > j)
+            {
+                L[i + n * j] = A[i + n * j]; // Lower triangular part
+            }
+            else
+            {
+                U[i + n * j] = A[i + n * j]; // Upper triangular part
+                if (i == j)
+                {
+                    L[i + n * j] = 1.0; // Diagonal elements of L are 1
+                    P[(tmpPinv[j]) + n * j] = 1.0;
+                }
+            }
+        }
+    }
 }
 
 ///     MAIN :: For the sake of simplicity we will Consider all square matrices n x n
@@ -178,9 +225,9 @@ int main(int argc, char *argv[])
 
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
+    auto start1 = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto stop1 = std::chrono::high_resolution_clock::now();
-    auto stop2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double Speedup;
 
@@ -190,6 +237,7 @@ int main(int argc, char *argv[])
     double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
     double *matrixL = (double *)malloc(n * n * sizeof(double));
     double *matrixU = (double *)malloc(n * n * sizeof(double));
+    double *matrixLU = (double *)malloc(n * n * sizeof(double));
     double *matrixP = (double *)malloc(n * n * sizeof(double)); // Permutation Matrix
     double *matrixY = (double *)malloc(n * n * sizeof(double));
     double *matrixX = (double *)malloc(n * n * sizeof(double));
@@ -205,37 +253,6 @@ int main(int argc, char *argv[])
     Write_A_over_B(matrixA, matrixA_original, n, n);
     Write_A_over_B(matrixB, matrixB_original, n, n);
 
-    // ----------------- Start Algorithm HERE!
-
-    start = std::chrono::high_resolution_clock::now();
-
-    // SOLVE LAPACK
-
-    stop1 = std::chrono::high_resolution_clock::now();
-
-    // Now Solve system of linear equations given AX=B given B is n x n
-    // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
-    // Solve (1) LY=B
-
-
-    // ---------------- Done! Now to Show the Results and Compare with BLAS
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
-    cout << "LU decomposition: " << (duration.count() * 1.e-9) << " s.\n";
-
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop2 - stop1);
-    cout << "Lower Solve: " << (duration.count() * 1.e-9) << " s.\n";
-
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - stop2);
-    cout << "Upper Solve: " << (duration.count() * 1.e-9) << " s.\n";
-
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    //Speedup = duration.count();
-    //cout << "\nCheck Accuracy and time of my AX=B:";
-    //ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, duration.count() * 1.e-9, n, n, recursion_limit);
-
-    Write_A_over_B(matrixA_original, matrixA, n, n);
-    Write_A_over_B(matrixB_original, matrixB, n, n);
-
     // Solve BLAS complete 100%
     int INFO;
     int IPIV[n];
@@ -245,7 +262,61 @@ int main(int argc, char *argv[])
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     cout << "\nCheck Accuracy and time of Complete BLAS Solver (dgesv): ";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, duration.count() * 1.e-9, n, n);
+    
+    // Restore A&B
+    Write_A_over_B(matrixA_original, matrixA, n, n);
+    Write_A_over_B(matrixB_original, matrixB, n, n);
 
+    // Now in Pieces
+    // First LU Decomposition
+
+    int ipiv[n];
+    start = std::chrono::high_resolution_clock::now();
+    LAPACKE_dgetrf(LAPACK_COL_MAJOR, n, n, matrixA, n, ipiv);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "LU decomposition: " << (duration.count() * 1.e-9) << " s.";  
+  
+    From_A_to_PLU(matrixA,ipiv,n,matrixL,matrixU,matrixP);
+    // LU = L *U
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixL, n, matrixU, n, 0.0, matrixLU, n);
+     
+    cout << "\nCheck Accuracy and time of PLU=A : ";
+    ErrorCalc_Display(matrixP, matrixA_original, matrixLU, duration.count() * 1.e-9, n, n);
+
+  
+//    PrintColMatrix(matrixA_original,n,n);
+//    PrintColMatrix(matrixL,n,n);
+//    PrintColMatrix(matrixU,n,n);
+//    PrintColMatrix(matrixP,n,n);
+//    PrintColMatrix(matrixLU,n,n);
+//  cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixLU, n, 0.0, matrixLU, n);
+//    cout << "\n";
+//    PrintColMatrix(matrixLU,n,n);
+
+
+    // Now Solve system of linear equations given AX=B given B is n x n
+    // Solve AX=B -> PLUX=B -> LUX=P(inv)*B -> (2) UX=Y -> (1) LY=P(inv)*B
+    // Solve (1) LY=P(inv)*B
+
+    TransposeColMajor(matrixP,n,n);
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixB, n, 0.0, matrixB_Calc, n);
+    
+    start1 = std::chrono::high_resolution_clock::now();
+    LAPACK_dgesv(&n, &n, matrixL, &n, ipiv, matrixB_Calc, &n, &INFO);
+    // (2) UX=Y 
+    LAPACK_dgesv(&n, &n, matrixU, &n, ipiv, matrixB_Calc, &n, &INFO);
+    stop1 = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start1);
+    cout << "Lower+Upper Solve: " << (duration.count() * 1.e-9) << " s.\n";
+  
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>((stop-start)+(stop1 - start1));
+   
+    cout << "\nCheck Accuracy and time of sequenced LU+Lsolve+Usolve -> AX=B:";
+    ErrorCalc_Display(matrixA_original, matrixB_original, matrixB_Calc, duration.count() * 1.e-9, n, n);
+
+    //Write_A_over_B(matrixA_original, matrixA, n, n);
+    //Write_A_over_B(matrixB_original, matrixB, n, n);
     //cout << "Solution Calculation Speedup from BLAS to mine: " << Speedup / duration.count() << "x.\n\n";
 
     return 0;
