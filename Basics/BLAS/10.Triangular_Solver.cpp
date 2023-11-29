@@ -5,6 +5,9 @@
 #include <vector>
 #include <cmath>
 #include <fstream>
+#include <pthread.h>
+#include <thread>
+#include <lapacke.h>
 
 using namespace std;
 
@@ -591,10 +594,17 @@ int main(int argc, char *argv[])
     const int n = std::atoi(argv[4]);               // n
     const int p = n;                                // Note we should allow P to be higher or lower than n!!!! (LATER)
 
+    // Timers
+    auto start = std::chrono::high_resolution_clock::now();
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto stop1 = std::chrono::high_resolution_clock::now();
+    auto stop2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     // Input Matrices in Column Major Format
     double *matrixL = (double *)malloc(n * n * sizeof(double));
     double *matrixU = (double *)malloc(n * n * sizeof(double));
     double *matrixB = (double *)malloc(n * n * sizeof(double));
+    double *matrixB2 = (double *)malloc(n * n * sizeof(double));
     double *matrixB_orig = (double *)malloc(n * n * sizeof(double));
     double *matrixL_orig = (double *)malloc(n * n * sizeof(double));
     double *matrixU_orig = (double *)malloc(n * n * sizeof(double));
@@ -603,6 +613,8 @@ int main(int argc, char *argv[])
     double *LowerMatrixXsol = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsolNaive = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixXsol = (double *)malloc(n * n * sizeof(double));
+    double *LowerMatrixXsol2 = (double *)malloc(n * n * sizeof(double));
+    double *UpperMatrixXsol2 = (double *)malloc(n * n * sizeof(double));
     double *LowerMatrixBLASsol = (double *)malloc(n * n * sizeof(double));
     double *UpperMatrixBLASsol = (double *)malloc(n * n * sizeof(double));
     // Matrices to Calculate Error
@@ -610,6 +622,8 @@ int main(int argc, char *argv[])
     double *UpperCalculatedBNaive = (double *)malloc(n * n * sizeof(double));
     double *LowerCalculatedB = (double *)malloc(n * n * sizeof(double));
     double *UpperCalculatedB = (double *)malloc(n * n * sizeof(double));
+    double *LowerCalculatedB2 = (double *)malloc(n * n * sizeof(double));
+    double *UpperCalculatedB2 = (double *)malloc(n * n * sizeof(double));
     double *LowerCalculatedBBLAS = (double *)malloc(n * n * sizeof(double));
     double *UpperCalculatedBBLAS = (double *)malloc(n * n * sizeof(double));
 
@@ -633,28 +647,43 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Print the matrix elements of L U and B
-    //cout << "\nMatrix L Print:\n";
-    //PrintColMatrix(matrixL, n, n);
-    //cout << "\nMatrix U Print:\n";
-    //PrintColMatrix(matrixU, n, n);
-    //cout << "\nMatrix B Print:\n";
-    //PrintColMatrix(matrixB, n, n);
-
     Rewrite_A_over_B(matrixB, matrixB_orig, n, p);
+    Rewrite_A_over_B(matrixB_orig, matrixB2, n, p);
     Rewrite_A_over_B(matrixL, matrixL_orig, n, p);
     Rewrite_A_over_B(matrixU, matrixU_orig, n, p);
 
     // Solve Naive
+    start = std::chrono::high_resolution_clock::now();
     LowerTriangularSolverNaiveReal(matrixL, matrixB, LowerMatrixXsolNaive, n);
     UpperTriangularSolverNaiveReal(matrixU, matrixB, UpperMatrixXsolNaive, n);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Naive Triangular Solver--------------------->: " << (duration.count() * 1.e-9) << " s.\n";
 
-    // Solve Recursive
+    // Solve Recursive NO MALLOC
+    start = std::chrono::high_resolution_clock::now();
     LowerTriangularSolverRecursiveReal(matrixL,0,0,matrixB,0,0,LowerMatrixXsol,n,n,p);
+    UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB2,0,0,UpperMatrixXsol,n,n,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Recursive No MALLOC Triangular Solver------->: " << (duration.count() * 1.e-9) << " s.\n";
+
+    //Restore
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
-    UpperTriangularSolverRecursiveReal(matrixU,0,0,matrixB,0,0,UpperMatrixXsol,n,n,p);
+    Rewrite_A_over_B(matrixB_orig, matrixB2, n, p);
+
+    // Solve Recursive WITH MALLOC
+    start = std::chrono::high_resolution_clock::now();
+    LowerTriangularSolverRecursiveReal_0(matrixL,matrixB,LowerMatrixXsol2,n,p);
+    UpperTriangularSolverRecursiveReal_0(matrixU,matrixB2,UpperMatrixXsol2,n,p);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    cout << "Recursive WITH MALLOC Triangular Solver----->: " << (duration.count() * 1.e-9) << " s.\n";
+
+    //Restore
     Rewrite_A_over_B(matrixB_orig, matrixB, n, p);
- 
+    Rewrite_A_over_B(matrixB_orig, matrixB2, n, p);
+
     //Solve BLAS
     int INFO;
     int IPIV[n];
@@ -684,6 +713,8 @@ int main(int argc, char *argv[])
     NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsolNaive, UpperCalculatedBNaive, n, n, n);
     NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsol, LowerCalculatedB, n, n, n);
     NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsol, UpperCalculatedB, n, n, n);
+    NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixXsol2, LowerCalculatedB2, n, n, n);
+    NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixXsol2, UpperCalculatedB2, n, n, n);
     NaiveMatrixMultiplyCol(matrixL_orig, LowerMatrixBLASsol, LowerCalculatedBBLAS, n, n, n);
     NaiveMatrixMultiplyCol(matrixU_orig, UpperMatrixBLASsol, UpperCalculatedBBLAS, n, n, n);
 
@@ -691,6 +722,8 @@ int main(int argc, char *argv[])
     double Udiffnaive = MatrixAbsDiff(matrixB_orig, UpperCalculatedBNaive, n, n);
     double Ldiff = MatrixAbsDiff(matrixB_orig, LowerCalculatedB, n, n);
     double Udiff = MatrixAbsDiff(matrixB_orig, UpperCalculatedB, n, n);
+    double Ldiff2 = MatrixAbsDiff(matrixB_orig, LowerCalculatedB2, n, n);
+    double Udiff2 = MatrixAbsDiff(matrixB_orig, UpperCalculatedB2, n, n);
     double LdiffBLAS = MatrixAbsDiff(matrixB_orig, LowerCalculatedBBLAS, n, n);
     double UdiffBLAS = MatrixAbsDiff(matrixB_orig, UpperCalculatedBBLAS, n, n);
 
@@ -698,6 +731,8 @@ int main(int argc, char *argv[])
     cout << "Naive Error (UX - B)-----------------> : " << Udiffnaive << "\n";
     cout << "\nRecursive Error (LX - B)-----------------> : " << Ldiff << "\n";
     cout << "Recursive Error (UX - B)-----------------> : " << Udiff << "\n";
+    cout << "\nRecursive Error Malloc (LX - B)----------> : " << Ldiff2 << "\n";
+    cout << "Recursive Error Malloc (UX - B)-----------> : " << Udiff2 << "\n";
     cout << "\nBLAS Error (LX - B)-----------------> : " << LdiffBLAS << "\n";
     cout << "BLAS Error (UX - B)-----------------> : " << UdiffBLAS << "\n";
     cout << "\nRecursion Count -----------------> : " << recursion_count << "\n";
