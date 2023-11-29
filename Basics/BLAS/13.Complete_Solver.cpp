@@ -105,6 +105,7 @@ int MaxRow(double *matrix, int N, int n)
     }
     return maxrow;
 }
+
 double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
@@ -196,6 +197,7 @@ void NaiveMatrixMultiplyColReferenced2(double *matrixa, int matrixa_m, int a_m1,
         }
     }
 }
+
 void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     int mm = m / 2;
@@ -230,7 +232,6 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
         }
     }
 }
-//Initialize will Create the submatrices based on the big matrix
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     int mm = m / 2;
@@ -585,7 +586,7 @@ void LUdecompositionRecursive3(double *Amatrix, double *Lmatrix, double *Umatrix
         {
             for (int j = 0; j < n - 1; j++)
             {
-                matrixS22[i + j * n] = Amatrix[1 + i + (1 + j) * n];
+                matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
             }
         }
         LUdecompositionRecursive3(matrixS22, matrixL22, matrixU22, n - 1);
@@ -593,8 +594,8 @@ void LUdecompositionRecursive3(double *Amatrix, double *Lmatrix, double *Umatrix
         {
             for (int j = 0; j < n - 1; j++)
             {
-                Lmatrix[i + 1 + (j + 1) * n] = matrixL22[i + j * n];
-                Umatrix[i + 1 + (j + 1) * n] = matrixU22[i + j * n];
+                Lmatrix[i + 1 + (j + 1) * n] = matrixL22[i + j * (n-1)];
+                Umatrix[i + 1 + (j + 1) * n] = matrixU22[i + j * (n-1)];
             }
         }
         free(matrixL22);
@@ -602,7 +603,6 @@ void LUdecompositionRecursive3(double *Amatrix, double *Lmatrix, double *Umatrix
         free(matrixS22);
     }
 }
-
 void LUdecompositionRecursive2Pivot(double *matrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int N, int n, int recursion_limit)
 {
     // do this without offsets just passing temporary matrices in recursion loop
@@ -746,10 +746,23 @@ int main ( int argc, char* argv[] ) {
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for A
-    LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);  // No Intermediate Mallocs 
-
+    LUdecompositionRecursive3(matrixA, matrixL, matrixU, n);  //  Intermediate Mallocs 
     stop1 = std::chrono::high_resolution_clock::now();
+
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
+    cout << "LU decomposition WITH intermediate Malloc: " << (duration.count() * 1.e-9) << " s.\n";
+
+    //Restore A
+    Write_A_over_B(matrixA_original,matrixA,n,n);
     
+    start = std::chrono::high_resolution_clock::now();
+    // Recursive Implementation of LU decomposition for A
+    LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);  // No Intermediate Mallocs 
+    stop1 = std::chrono::high_resolution_clock::now();
+
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
+    cout << "LU decomposition WITH NO intermediate Malloc: " << (duration.count() * 1.e-9) << " s.\n";
+
     // Now Solve system of linear equations given AX=B given B is n x n
     // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
     // Solve (1) LY=B
@@ -761,9 +774,6 @@ int main ( int argc, char* argv[] ) {
     
     // ---------------- Done! Now to Show the Results and Compare with BLAS
  
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
-    cout << "LU decomposition: " << (duration.count() * 1.e-9) << " s.\n";
-    
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop2 - stop1);
     cout << "Lower Solve: " << (duration.count() * 1.e-9) << " s.\n";
     
@@ -777,7 +787,9 @@ int main ( int argc, char* argv[] ) {
 
     Write_A_over_B(matrixA_original,matrixA,n,n);
     Write_A_over_B(matrixB_original,matrixB,n,n);
-    
+
+
+
     //Solve BLAS and compare with my implementation
     int INFO;
     int IPIV[n];
