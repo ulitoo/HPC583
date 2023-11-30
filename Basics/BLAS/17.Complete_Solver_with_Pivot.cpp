@@ -11,10 +11,10 @@
 using namespace std;
 
 // 	Problem:
-//  One Single Clean Code
-//  Get Matrix
-//  Find condition/Norm of matrix/ Infinity norm (max row or col)
-//  Run 3 routines with timing and Matrix Distance 
+//  1 One Single Clean Code
+//  2 Get Matrix
+//  3 Find condition number for the Matrix 
+//  4 Run 3 routines with timing and Matrix Distance 
 //      -With Pivot
 //      -With NO Pivot
 //      -LAPACK BLAS
@@ -43,6 +43,15 @@ int Read_Matrix_file(double *matrix, int size, char *filename)
     std::cout << "File " << filename << " read correctly!" << std::endl;
     return 0;
 }
+
+double ConditionNumber(double *matrixA,int m,int n)
+{
+//  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
+//  The infinity-norm of a square matrix is the maximum of the absolute row sum
+//  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable 
+return 0.0;
+}
+
 void PrintColMatrix(double *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
@@ -108,6 +117,7 @@ int MaxRow(double *matrix, int n)
     }
     return maxrow;
 }
+
 double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
@@ -117,6 +127,16 @@ double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
     }
     return diff;
 }
+double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
+{
+    double diff = 0.0;
+    for (int i = 0; i < m * n; ++i)
+    {
+        diff += (matrixa[i] - matrixb[i])*(matrixa[i] - matrixb[i]);
+    }
+    return sqrt(diff);
+}
+
 void ColMajor_Transpose(double *matrix, int m, int n)
 {
     double *tmpmatrix = (double *)malloc(m * n * sizeof(double));
@@ -173,166 +193,10 @@ void TransposeColMajor(double *matrix, int m, int n)
         }
     }
 }
-void SchurComplement(double *matrix, int N, int n)
-{
-    int offset = (N - n);
-    // ONLY 1 matrix, rewrite A22 as S22 ! ; N is the original A size ; n is the size of A in the recursion; n-1 is size of A22
-    for (int i = 0; i < (n-1); i++)
-    {
-        for (int j = 0; j < (n-1); j++)
-        {
-            //This is in Column Major Order
-            matrix[(i+offset+1)+((j+offset+1)*N)] = matrix[(i+offset+1)+((j+offset+1)*N)] - ((matrix[offset+(j+offset+1)*N]) * (matrix[i+offset+1+(offset*N)]) / matrix[(offset)+(offset)*N]) ;
-        }   
-    }
-}
-void LUdecompositionRecursive(double *matrix, double *LUmatrix, int N, int n)
-{
-    //Assume square Matrix for simplicity
-    int offset = (N-n);
 
-    LUmatrix[(offset)+(offset)*N]=matrix[(offset)+(offset)*N];
-    
-    for (int i = 1; i < n; i++)
-    {
-        LUmatrix[i+offset+(offset*N)] = matrix[i+offset+(offset*N)] / matrix[(offset)+(offset)*N] ;
-        LUmatrix[offset+(i+offset)*N] = matrix[offset+(i+offset)*N];
-    }
-    
-    if (n==2) 
-    {
-        LUmatrix[(offset+1)+(offset+1)*N] = matrix[(offset+1)+(offset+1)*N] - matrix[(offset+1)+(offset)*N]*matrix[(offset)+(offset+1)*N]/matrix[(offset)+(offset)*N];    
-    }
-    else
-    {
-        SchurComplement(matrix,N,n);
-        LUdecompositionRecursive(matrix, LUmatrix, N, n-1);
-    }
-}
-void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix, int N, int n)
-{
-    //Assume square Matrix for simplicity
-    int offset = (N-n);
-
-    Umatrix[(offset)+(offset)*N] = matrix[(offset)+(offset)*N];
-    Lmatrix[(offset)+(offset)*N] = 1.0;
-
-    for (int i = 1; i < n; i++)
-    {
-        Lmatrix[i+offset+(offset*N)] = matrix[i+offset+(offset*N)] / matrix[(offset)+(offset)*N] ;
-        Lmatrix[offset+(i+offset)*N] = 0.0; 
-        Umatrix[offset+(i+offset)*N] = matrix[offset+(i+offset)*N];
-        Umatrix[i+offset+(offset*N)] = 0.0;
-    }
-    
-    if (n==2) 
-    {
-        Umatrix[(offset+1)+(offset+1)*N] = matrix[(offset+1)+(offset+1)*N] - matrix[(offset+1)+(offset)*N]*matrix[(offset)+(offset+1)*N]/matrix[(offset)+(offset)*N];
-        Lmatrix[(offset+1)+(offset+1)*N] = 1.0;
-    }
-    else
-    {
-        SchurComplement(matrix,N,n);
-        LUdecompositionRecursive2(matrix, Lmatrix, Umatrix, N, n-1);
-    }
-}
-void NaiveMatrixMultiplyColReferenced2(double *matrixa, int matrixa_m, int a_m1, int a_n1 ,double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc,int matrixc_m, int c_m1, int c_p1, int m, int n, int p)
-{
-    // This commented line will help debug
-    // cout<<"\n SubMatrix A " << a_m1 << "," << a_n1 <<"  SubMatrix B " << b_n1 << "," << b_p1 <<"\n";
-    for (int i = 0; i < m; ++i)
-    {
-        for (int j = 0; j < p; ++j)
-        {
-            for (int k = 0; k < n; ++k)
-            {
-                matrixc[c_m1 + i + ((c_p1+j)*matrixc_m)] += (matrixa[a_m1 + i +(a_n1+k)*matrixa_m])*(matrixb[b_n1 + k +(b_p1+j)*matrixb_n]); 
-                // A(i,k)*B(k,j)
-            }
-        }
-    }
-}
-void MMMultRecursive3Threaded(double *matrixa, int matrixa_m, int a_m1, int a_n1, double *matrixb, int matrixb_n, int b_n1, int b_p1, double *matrixc, int matrixc_m, int c_m1, int c_p1, int m, int n, int p, int recursion_limit)
-{
-    recursion_count++;
-    // This Version will NOT Malloc Cxx Either and will write C elements on proper places
-
-    if (m <= recursion_limit or n <= recursion_limit or p <= recursion_limit)
-    {
-        NaiveMatrixMultiplyColReferenced2(matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, m, n, p);
-    }
-    else
-    {
-        int mm = m / 2;
-        int mm2 = m - mm; // If odd numbers then mm != mm2 so we keep track of the fact
-        int nn = n / 2;
-        int nn2 = n - nn;
-        int pp = p / 2;
-        int pp2 = p - pp;
-
-        // C11 is recurse1 
-        std::thread threadC11_1(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn, pp, recursion_limit);
-        // C12 is recurse3 
-        std::thread threadC12_1(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn, pp2, recursion_limit);
-        // C21 is recurse5 
-        std::thread threadC21_1(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn, pp, recursion_limit);
-        // C22 is recurse7 
-        std::thread threadC22_1(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1 + mm, a_n1, matrixb, matrixb_n, b_n1, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn, pp2, recursion_limit);
-
-        threadC11_1.join();
-        threadC12_1.join();
-        threadC21_1.join();
-        threadC22_1.join();
-
-        std::thread threadC11_2(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1, c_p1, mm, nn2, pp, recursion_limit);
-        std::thread threadC12_2(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1, c_p1 + pp, mm, nn2, pp2, recursion_limit);
-        std::thread threadC21_2(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1, matrixc, matrixc_m, c_m1 + mm, c_p1, mm2, nn2, pp, recursion_limit);
-        std::thread threadC22_2(MMMultRecursive3Threaded,matrixa, matrixa_m, a_m1 + mm, a_n1 + nn, matrixb, matrixb_n, b_n1 + nn, b_p1 + pp, matrixc, matrixc_m, c_m1 + mm, c_p1 + pp, mm2, nn2, pp2, recursion_limit);
-
-        threadC11_2.join();
-        threadC12_2.join();
-        threadC21_2.join();
-        threadC22_2.join();
-    }
-}
-//Collect Results of Xxx to the big matrix X
-void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
-{
-    int mm = m / 2;
-    int mm2 = m - mm;
-    int pp = p / 2;
-    for (int i = 0; i < mm; ++i)
-    {
-        for (int j = 0; j < pp; ++j)
-        {
-            matrixc[i + (j * m)] += C11[i + (j * mm)];
-        }
-    }
-    for (int i = 0; i < mm; ++i)
-    {
-        for (int j = pp; j < p; ++j)
-        {
-            matrixc[i + (j * m)] += C12[i + ((j-pp) * mm)];
-        }
-    }
-    for (int i = mm; i < m; ++i)
-    {
-        for (int j = 0; j < pp; ++j)
-        {
-            matrixc[i + (j * m)] += C21[(i-mm) + (j * mm2)];
-        }
-    }
-    for (int i = mm; i < m; ++i)
-    {
-        for (int j = pp; j < p; ++j)
-        {
-            matrixc[i + (j * m)] += C22[(i-mm) + ((j-pp) * mm2)];
-        }
-    }
-}
-//Initialize will Create the submatrices based on the big matrix
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
+    //Initialize will Create the submatrices based on the big matrix
     int mm = m / 2;
     int mm2 = m - mm;
     int pp = p / 2;
@@ -365,6 +229,42 @@ void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C2
         }
     }
 }
+void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
+{
+    //Collect Results of Xxx to the big matrix X
+    int mm = m / 2;
+    int mm2 = m - mm;
+    int pp = p / 2;
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            matrixc[i + (j * m)] += C11[i + (j * mm)];
+        }
+    }
+    for (int i = 0; i < mm; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            matrixc[i + (j * m)] += C12[i + ((j-pp) * mm)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = 0; j < pp; ++j)
+        {
+            matrixc[i + (j * m)] += C21[(i-mm) + (j * mm2)];
+        }
+    }
+    for (int i = mm; i < m; ++i)
+    {
+        for (int j = pp; j < p; ++j)
+        {
+            matrixc[i + (j * m)] += C22[(i-mm) + ((j-pp) * mm2)];
+        }
+    }
+}
+
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
@@ -575,17 +475,21 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
         free(X22);
     }   
 }
-void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time,int n, int p, int recursion_limit)
-{
-    double *CalculatedB = (double *)malloc(n * p * sizeof(double));   
-    MakeZeroes(CalculatedB,n,p);
-    //NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
-    MMMultRecursive3Threaded(matrixA,n,0,0 ,matrixX,n,0,0, CalculatedB,n,0,0,n,n,n,recursion_limit);
-    double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
 
-    cout << "\nError (AX - B):----------------> : " << diff << "\n";
-    cout << "Elapsed Time:------------------> : " << elapsed_time << " s.\n\n";
-    free(CalculatedB);
+void SchurComplement(double *matrix, int N, int n)
+{
+    int offset = (N - n);
+    int offset2 = offset*(N+1);
+    // ONLY 1 matrix, rewrite A22 as S22 ! ; N is the original A size ; n is the size of A in the recursion; n-1 is size of A22
+    for (int i = 0; i < (n-1); i++)
+    {
+        int i2=(i+offset2+1);
+        for (int j = 0; j < (n-1); j++)
+        {
+            //This is in Column Major Order
+            matrix[i2+((j+1)*N)] = matrix[(i2)+((j+1)*N)] - ((matrix[offset2+(j+1)*N]) * (matrix[i+1+(offset2)]) / matrix[offset2]) ;
+        }   
+    }
 }
 void SchurComplement2(double *matrix, int n)
 {
@@ -600,55 +504,40 @@ void SchurComplement2(double *matrix, int n)
         }   
     }
 }
-void LUdecompositionRecursive3(double *Amatrix, double *Lmatrix, double *Umatrix, int n)
+void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix, int N, int n)
 {
-    // Assume square Matrix for simplicity
-    // This version relies on Malloc of smaller matrices
-    double *matrixS22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixL22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixU22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
+    //Assume square Matrix for simplicity
 
-    Umatrix[0] = Amatrix[0];  
-    Lmatrix[0] = 1.0;
+    int offset = (N-n);
+    int offset2 = N*offset;
+    int offset3 = (offset)+offset2;
+    
+    Umatrix[(offset)*(N+1)] = matrix[(offset)*(N+1)];
+    Lmatrix[(offset)*(N+1)] = 1.0;
 
-    if (n == 2)
+    for (int i = 1; i < n; i++)
     {
-        Umatrix[3] = Amatrix[3] - Amatrix[1] * Amatrix[2] / Amatrix[0];
-        Lmatrix[3] = 1.0;
-        Lmatrix[1] = Amatrix[1] / Amatrix[0] ;  
-        Lmatrix[2] = 0.0; 
-        Umatrix[2] = Amatrix[2];
-        Umatrix[1] = 0.0;
+        int j=i*N+offset3;
+        int i2=i+offset3;
+        // offset*N unnecesary repeated calculations!!!!!!!!!!!!!!
+        Lmatrix[i2] = matrix[i2] / matrix[offset3] ;
+        Lmatrix[j] = 0.0; 
+        Umatrix[j] = matrix[j];
+        Umatrix[i2] = 0.0;
+    }
+    
+    if (n==2) 
+    {
+        Umatrix[(offset+1)+(offset+1)*N] = matrix[(offset+1)+(offset+1)*N] - matrix[(offset+1)+(offset)*N]*matrix[(offset)+(offset+1)*N]/matrix[(offset)+(offset)*N];
+        Lmatrix[(offset+1)+(offset+1)*N] = 1.0;
     }
     else
     {
-        SchurComplement2(Amatrix, n);
-        for (int i = 0; i < n - 1; i++)
-        {
-            for (int j = 0; j < n - 1; j++)
-            {
-                matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
-            }
-        }
-        LUdecompositionRecursive3(matrixS22, matrixL22, matrixU22, n - 1);
-        for (int i = 1; i < n; i++)
-        {
-            Lmatrix[i] = Amatrix[i] / Amatrix[0];
-            Lmatrix[i * n] = 0.0;
-            Umatrix[i * n] = Amatrix[i * n];
-            Umatrix[i] = 0.0;
-            for (int j = 1; j < n; j++)
-            {
-                Lmatrix[i + j * n] = matrixL22[i - 1 + (j - 1) * (n - 1)];
-                Umatrix[i + j * n] = matrixU22[i - 1 + (j - 1) * (n - 1)];
-            }
-        }
+        SchurComplement(matrix,N,n);
+        LUdecompositionRecursive2(matrix, Lmatrix, Umatrix, N, n-1);
     }
-    free(matrixL22);
-    free(matrixU22);
-    free(matrixS22);
 }
-void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int n, int recursion_limit)
+void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int n)
 {
     // do this without offsets just passing temporary (m allocated) matrices in recursion loop
     double *matrixP1 = (double *)malloc(n * n * sizeof(double)); 
@@ -697,7 +586,7 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
                 matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
             }
         }
-        LUdecompositionRecursive3Pivot(matrixS22, matrixL22, matrixU22, matrixP22, n-1, recursion_limit);
+        LUdecompositionRecursive3Pivot(matrixS22, matrixL22, matrixU22, matrixP22, n-1);
         for (int i = 1; i < n; i++)
         {
             //Lmatrix[i] = Amatrix[i] / Amatrix[0];
@@ -715,7 +604,6 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
     }
 
     //End step is calculate the Pmatrix 
-    //MMMultRecursive3Threaded(matrixP2,n,0,0 ,matrixP1,n,0,0, Pmatrix,n,0,0,n,n,n,recursion_limit);
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP2, n, matrixP1, n, 0.0, Pmatrix, n);
 
     free(matrixL22);
@@ -724,6 +612,21 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
     free(matrixP22);
     free(matrixP1);
     free(matrixP2);
+}
+
+void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time,int n, int p, int recursion_limit)
+{
+    double *CalculatedB = (double *)malloc(n * p * sizeof(double));
+    MakeZeroes(CalculatedB, n, p);
+    // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
+    // Substitute by LAPACK dGEMM 
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
+    double dist = MatrixDistance(matrixB, CalculatedB, n, p);
+    cout << "\nAbs cumulative Error (AX - B):----------------> : " << diff << "\n";
+    cout << "Vector Distance (AX - B):---------------------> : " << dist << "\n";
+    cout << "Elapsed Time:------------------> : " << elapsed_time << " s.\n\n";
+    free(CalculatedB);
 }
 
 ///     MAIN :: For the sake of simplicity we will Consider all square matrices n x n
@@ -736,15 +639,15 @@ int main ( int argc, char* argv[] ) {
         return 1;
     }
     const int n = std::atoi(argv[3]); // rank
+
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto stop1 = std::chrono::high_resolution_clock::now();
     auto stop2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    long double Speedup;
 
-    // Alloc Space for Matrices Needed in Column Major Order
+    // Alloc Space for MATRICES Needed in Column Major Order
     double *matrixA = (double *)malloc(n * n * sizeof(double));
     double *matrixB = (double *)malloc(n * n * sizeof(double));
     double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
@@ -757,9 +660,13 @@ int main ( int argc, char* argv[] ) {
     double *matrixAbar = (double *)malloc(n * n * sizeof(double));
     double *matrixA_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
     double *matrixB_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
-    int recursion_limit = 64;
 
-    // Read Matrix A and B from arguments and files
+    // Other Variables
+    int INFO, IPIV[n];
+    int recursion_limit = 64;
+    long double Speedup;
+
+    // READ Matrix A and B from arguments and FILES
     Read_Matrix_file(matrixA, n*n, argv[1]);
     Read_Matrix_file(matrixB, n*n, argv[2]);
     
@@ -771,11 +678,9 @@ int main ( int argc, char* argv[] ) {
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for PA -> PIVOTED
-    LUdecompositionRecursive3Pivot(matrixA, matrixL, matrixU, matrixP, n, recursion_limit);
-    MMMultRecursive3Threaded(matrixP,n,0,0 ,matrixB,n,0,0, matrixBPivot,n,0,0,n,n,n,recursion_limit);
+    LUdecompositionRecursive3Pivot(matrixA, matrixL, matrixU, matrixP, n);
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixB, n, 0.0, matrixBPivot, n);
     // Now use BPivot instead of B for Solving LUX=PB -> PAX=PB -> PA=LU
-
-    // We might need LATER LUdecompositionRecursive to have JUST one Matrix LU instead of 2 separate matrices
     stop1 = std::chrono::high_resolution_clock::now();
     
     // Now Solve system of linear equations given AX=B given B is n x n
@@ -807,8 +712,6 @@ int main ( int argc, char* argv[] ) {
     Write_A_over_B(matrixB_original,matrixB,n,n);
     
     //Solve BLAS and compare with my implementation
-    int INFO;
-    int IPIV[n];
     start = std::chrono::high_resolution_clock::now();
     LAPACK_dgesv(&n,&n,matrixA,&n,IPIV,matrixB,&n,&INFO);
     stop = std::chrono::high_resolution_clock::now();
