@@ -207,8 +207,8 @@ int main ( int argc, char* argv[] ) {
     //matrixRow = {7.0,1.0,5.0,4.0,3.0,5.0,6.0,1.0,2.0};
 
     // Print the matrix elements
-    cout << "\nMatrix A Print:\n";
-    PrintRowMatrix(matrixRow);
+    //cout << "\nMatrix A Print:\n";
+    //PrintRowMatrix(matrixRow);
 
     matrixLU = LUdecomposition1(matrixRow);
     matrixLU_pivot = LUdecomposition_pivot(matrixRow);
@@ -236,10 +236,10 @@ int main ( int argc, char* argv[] ) {
 
     //cout << "\nMatrix LU Print:\n";
     //PrintRowMatrix(matrixLU);    
-    cout << "\nMatrix L Print:\n";
-    PrintRowMatrix(matrixL);
-    cout << "\nMatrix U Print:\n";
-    PrintRowMatrix(matrixU);
+    //cout << "\nMatrix L Print:\n";
+    //PrintRowMatrix(matrixL);
+    //cout << "\nMatrix U Print:\n";
+    //PrintRowMatrix(matrixU);
 
     //Multiply    
     for (int i = 0; i < n; ++i)
@@ -252,8 +252,8 @@ int main ( int argc, char* argv[] ) {
         }
     }
 
-    std::cout << "\nMatrix A_fin:L*U:" << std::endl;
-    PrintRowMatrix (A_fin);
+    //std::cout << "\nMatrix A_fin:L*U:" << std::endl;
+    //PrintRowMatrix (A_fin);
 
     double diff=0;
     //Error    
@@ -273,7 +273,7 @@ int main ( int argc, char* argv[] ) {
     vectorb = InitVector(n);
     std::cout << "\nVector b:" << std::endl;
     //vectorb = {27.0,21.0,9.0};
-    PrintVector(n,vectorb);
+    //PrintVector(n,vectorb);
 
     // Solve LUx=b -> (2) Ux=y -> (1) Ly=b
     // Solve (1)
@@ -289,7 +289,7 @@ int main ( int argc, char* argv[] ) {
         vectory[i] /= matrixL[i+n*i];
     }   
     std::cout << "\nVector y:" << std::endl;
-    PrintVector(n,vectory);
+    //PrintVector(n,vectory);
 
     // Solve (2) Ux=y
     std::vector<double> vectorx(n);
@@ -303,7 +303,7 @@ int main ( int argc, char* argv[] ) {
     }   
    
     std::cout << "\nSOLUTION Vector x:" << std::endl;
-    PrintVector(n,vectorx);
+    //PrintVector(n,vectorx);
 
 
     

@@ -676,16 +676,20 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
 {
     //Assume square Matrix for simplicity
     int offset = (N-n);
-
+    int offset2 = N*offset;
+    int offset3 = (offset)+offset2;
+    
     Umatrix[(offset)+(offset)*N] = matrix[(offset)+(offset)*N];
     Lmatrix[(offset)+(offset)*N] = 1.0;
 
     for (int i = 1; i < n; i++)
     {
-        Lmatrix[i+offset+(offset*N)] = matrix[i+offset+(offset*N)] / matrix[(offset)+(offset)*N] ;
-        Lmatrix[offset+(i+offset)*N] = 0.0; 
-        Umatrix[offset+(i+offset)*N] = matrix[offset+(i+offset)*N];
-        Umatrix[i+offset+(offset*N)] = 0.0;
+        int j=i*N;
+        // offset*N unnecesary repeated calculations!!!!!!!!!!!!!!
+        Lmatrix[i+offset3] = matrix[i+offset3] / matrix[offset3] ;
+        Lmatrix[(j)+offset3] = 0.0; 
+        Umatrix[(j)+offset3] = matrix[(j)+offset3];
+        Umatrix[i+offset3] = 0.0;
     }
     
     if (n==2) 

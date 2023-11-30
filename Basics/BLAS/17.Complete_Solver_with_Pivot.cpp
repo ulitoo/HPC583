@@ -11,12 +11,14 @@
 using namespace std;
 
 // 	Problem:
-//  0. Read Random matrix A and B
-//  1.Random Matrix -> get a LU decomposition recursively
-//  2.Solve with LUX=B -> LY=B -> when you solve for Y -> UX=Y -> Solve  for X
-//  3.Evaluate Error and Time
-//  4.Implement PIVOTing and see change in error?
-//  5.Implement threading? -> See change in timing
+//  One Single Clean Code
+//  Get Matrix
+//  Find condition/Norm of matrix/ Infinity norm (max row or col)
+//  Run 3 routines with timing and Matrix Distance 
+//      With Pivot
+//      With NO Pivot
+//      LAPACK BLAS
+
 
 /////////////////////////////     FUNCTIONS
 int recursion_count = 0;
@@ -72,7 +74,6 @@ void MakeZeroes(double *matrix, int m, int n)
         matrix[i] = 0.0;
     }
 }
-
 void MakeIdentity(double *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
@@ -90,7 +91,6 @@ void MakeIdentity(double *matrix, int m, int n)
         }
     }
 }
-
 int MaxRow(double *matrix, int n)
 {
     int maxrow;
@@ -108,7 +108,6 @@ int MaxRow(double *matrix, int n)
     }
     return maxrow;
 }
-
 double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
