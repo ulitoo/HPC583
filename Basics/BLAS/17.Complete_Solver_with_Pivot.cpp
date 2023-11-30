@@ -15,9 +15,9 @@ using namespace std;
 //  Get Matrix
 //  Find condition/Norm of matrix/ Infinity norm (max row or col)
 //  Run 3 routines with timing and Matrix Distance 
-//      With Pivot
-//      With NO Pivot
-//      LAPACK BLAS
+//      -With Pivot
+//      -With NO Pivot
+//      -LAPACK BLAS
 
 
 /////////////////////////////     FUNCTIONS
@@ -40,7 +40,7 @@ int Read_Matrix_file(double *matrix, int size, char *filename)
         std::cerr << "Error: could not read file" << std::endl;
         return 1;
     }
-    std::cout << "File " << filename << " read correctly!\n" << std::endl;
+    std::cout << "File " << filename << " read correctly!" << std::endl;
     return 0;
 }
 void PrintColMatrix(double *matrix, int m, int n)
