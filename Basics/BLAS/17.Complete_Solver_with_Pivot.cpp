@@ -18,6 +18,7 @@ using namespace std;
 //      -With Pivot
 //      -With NO Pivot
 //      -LAPACK BLAS
+//  5. OPTIMIZE PIVOT CODE? LUdecompositionRecursive4Pivot
 
 
 /////////////////////////////     FUNCTIONS
@@ -72,7 +73,6 @@ void InverseMatrix(double *matrixA, int n)
             std::cerr << "Error in LAPACKE_dgetrf: " << info << std::endl;
         }
     }
-
 double InfinityNorm(double *matrixA, int n)
 {
     // Find the biggest sum of abs (rows)
@@ -92,7 +92,6 @@ double InfinityNorm(double *matrixA, int n)
     }
     return max;
 }
-
 double ConditionNumber(double *matrixA, int m, int n)
 {
     //  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
@@ -112,7 +111,6 @@ double ConditionNumber(double *matrixA, int m, int n)
     return InfNormA * InfNormAinv;
 
 }
-
 void PrintColMatrix(double *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
@@ -160,12 +158,11 @@ int MaxRow(double *matrix, int n)
         if (temp_abs_element > maxabsvalue)
         {
             maxrow = i;
-            maxabsvalue = abs(temp_abs_element);
+            maxabsvalue = temp_abs_element;
         }
     }
     return maxrow;
 }
-
 double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
@@ -175,7 +172,6 @@ double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
     }
     return sqrt(diff);
 }
-
 void ColMajor_Transpose(double *matrix, int m, int n)
 {
     double *tmpmatrix = (double *)malloc(m * n * sizeof(double));
@@ -192,24 +188,27 @@ void ColMajor_Transpose(double *matrix, int m, int n)
     }
     free(tmpmatrix);
 }
+
 void SwapCol_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
 {
     double tmpval;
+    int towards2=towards*m;
+    int from2=from*m;
     for (int i = 0; i < m; i++)
     {
-        tmpval = matrix[i+towards*m];
-        matrix[i+towards*m] = matrix[i+from*m];
-        matrix[i+from*m] = tmpval;
+        tmpval = matrix[i+towards2];
+        matrix[i+towards2] = matrix[i+from2];
+        matrix[i+from2] = tmpval;
     }
 }
 void SwapRow_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
 {
     double tmpval;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n*m; i+=m)
     {
-        tmpval = matrix[towards+i*m];
-        matrix[towards+i*m] = matrix[from+i*m];
-        matrix[from+i*m] = tmpval;
+        tmpval = matrix[towards+i];
+        matrix[towards+i] = matrix[from+i];
+        matrix[from+i] = tmpval;
     }
 }
 
@@ -528,19 +527,19 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
     int offset = (N-n);
     int offset2 = N*offset;
     int offset3 = (offset)+offset2;
-    
+    int j,i2;
     Umatrix[(offset)*(N+1)] = matrix[(offset)*(N+1)];
     Lmatrix[(offset)*(N+1)] = 1.0;
 
     for (int i = 1; i < n; i++)
     {
-        int j=i*N+offset3;
-        int i2=i+offset3;
+        j=i*N+offset3;
+        i2=i+offset3;
         // offset*N unnecesary repeated calculations!!!!!!!!!!!!!!
         Lmatrix[i2] = matrix[i2] / matrix[offset3] ;
-        Lmatrix[j] = 0.0; 
+        //Lmatrix[j] = 0.0;  Redundant, Already Zero 
         Umatrix[j] = matrix[j];
-        Umatrix[i2] = 0.0;
+        //Umatrix[i2] = 0.0; Redundant, Already Zero 
     }
     
     if (n==2) 
@@ -556,7 +555,7 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
 }
 void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int n)
 {
-    // do this without offsets just passing temporary (m allocated) matrices in recursion loop
+    //  do this with NO offsets just passing temporary (m allocated) matrices in recursion loop
     double *matrixP1 = (double *)malloc(n * n * sizeof(double)); 
     double *matrixP2 = (double *)malloc(n * n * sizeof(double)); 
     double *matrixP22 = (double *)malloc((n-1) * (n-1) * sizeof(double)); 
@@ -574,11 +573,14 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
     SwapRow_ColMajMatrix(Amatrix,0, maxrow, n, n);
     // Amatrix is now Amatrixbar(permutation done)
     matrixP2[0] = 1.0;
+    
+    /* P2 is All Zeros, this is redundant
     for (int i = 1; i < n; i++)
     {
         matrixP2[i * n] = 0.0;
         matrixP2[i] = 0.0;
     }
+    */
 
     Umatrix[0] = Amatrix[0];  
     Lmatrix[0] = 1.0;
@@ -588,9 +590,9 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
         Umatrix[3] = Amatrix[3] - Amatrix[1] * Amatrix[2] / Amatrix[0];
         Lmatrix[3] = 1.0;
         Lmatrix[1] = Amatrix[1] / Amatrix[0] ;  
-        Lmatrix[2] = 0.0; 
+        //Lmatrix[2] = 0.0; Redundant, Already Zero 
         Umatrix[2] = Amatrix[2];
-        Umatrix[1] = 0.0;
+        //Umatrix[1] = 0.0; Redundant, Already Zero
         matrixP2[3] = 1.0;
     }
     else
@@ -607,9 +609,89 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
         for (int i = 1; i < n; i++)
         {
             //Lmatrix[i] = Amatrix[i] / Amatrix[0];
-            Lmatrix[i * n] = 0.0;
+            //Lmatrix[i * n] = 0.0; Redundant, Already Zero
             Umatrix[i * n] = Amatrix[i * n];
-            Umatrix[i] = 0.0;
+            //Umatrix[i] = 0.0; Redundant, Already Zero
+            for (int j = 1; j < n; j++)
+            {
+                Lmatrix[i] += matrixP22[(i-1)+(j-1)*(n-1)] * Amatrix[j] / Amatrix[0];
+                matrixP2[i + j * n] = matrixP22[i - 1 + (j - 1) * (n - 1)];
+                Lmatrix[i + j * n] = matrixL22[i - 1 + (j - 1) * (n - 1)];
+                Umatrix[i + j * n] = matrixU22[i - 1 + (j - 1) * (n - 1)];
+            }
+        }
+    }
+
+    //End step is calculate the Pmatrix 
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP2, n, matrixP1, n, 0.0, Pmatrix, n);
+
+    free(matrixL22);
+    free(matrixU22);
+    free(matrixS22);
+    free(matrixP22);
+    free(matrixP1);
+    free(matrixP2);
+}
+
+void LUdecompositionRecursive4Pivot(double *Amatrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int n)
+{
+    //  TRY do this with offsets WITHOUT MALLOC
+    double *matrixP1 = (double *)malloc(n * n * sizeof(double)); 
+    double *matrixP2 = (double *)malloc(n * n * sizeof(double)); 
+    double *matrixP22 = (double *)malloc((n-1) * (n-1) * sizeof(double)); 
+    double *matrixS22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
+    double *matrixL22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
+    double *matrixU22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
+
+    // Assume square Matrix for simplicity
+    // This version relies on Malloc of smaller matrices
+
+    int maxrow = MaxRow(Amatrix,n); 
+    MakeIdentity(matrixP1,n,n);
+    // Permutation 
+    SwapRow_ColMajMatrix(matrixP1,0, maxrow, n, n);
+    SwapRow_ColMajMatrix(Amatrix,0, maxrow, n, n);
+    // Amatrix is now Amatrixbar(permutation done)
+    matrixP2[0] = 1.0;
+    
+    /* P2 is All Zeros, this is redundant
+    for (int i = 1; i < n; i++)
+    {
+        matrixP2[i * n] = 0.0;
+        matrixP2[i] = 0.0;
+    }
+    */
+
+    Umatrix[0] = Amatrix[0];  
+    Lmatrix[0] = 1.0;
+
+    if (n == 2)
+    {
+        Umatrix[3] = Amatrix[3] - Amatrix[1] * Amatrix[2] / Amatrix[0];
+        Lmatrix[3] = 1.0;
+        Lmatrix[1] = Amatrix[1] / Amatrix[0] ;  
+        //Lmatrix[2] = 0.0; Redundant, Already Zero 
+        Umatrix[2] = Amatrix[2];
+        //Umatrix[1] = 0.0; Redundant, Already Zero
+        matrixP2[3] = 1.0;
+    }
+    else
+    {
+        SchurComplement2(Amatrix, n);
+        for (int i = 0; i < n - 1; i++)
+        {
+            for (int j = 0; j < n - 1; j++)
+            {
+                matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
+            }
+        }
+        LUdecompositionRecursive3Pivot(matrixS22, matrixL22, matrixU22, matrixP22, n-1);
+        for (int i = 1; i < n; i++)
+        {
+            //Lmatrix[i] = Amatrix[i] / Amatrix[0];
+            //Lmatrix[i * n] = 0.0; Redundant, Already Zero
+            Umatrix[i * n] = Amatrix[i * n];
+            //Umatrix[i] = 0.0; Redundant, Already Zero
             for (int j = 1; j < n; j++)
             {
                 Lmatrix[i] += matrixP22[(i-1)+(j-1)*(n-1)] * Amatrix[j] / Amatrix[0];
@@ -671,14 +753,13 @@ int main ( int argc, char* argv[] ) {
     double *matrixY = (double *)malloc(n * n * sizeof(double));
     double *matrixX = (double *)malloc(n * n * sizeof(double));
     double *matrixB_Calc = (double *)malloc(n * n * sizeof(double));
-    //double *matrixAbar = (double *)malloc(n * n * sizeof(double));
     double *matrixA_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
     double *matrixB_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
 
     // Other Variables
     double AConditionNumber;
     int INFO, IPIV[n];
-    int recursion_limit = 64;
+    //int recursion_limit = 64;
 
     // READ Matrix A and B from arguments and FILES
     Read_Matrix_file(matrixA, n*n, argv[1]);
@@ -697,7 +778,7 @@ int main ( int argc, char* argv[] ) {
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for PA -> PIVOTED
-    LUdecompositionRecursive3Pivot(matrixA, matrixL, matrixU, matrixP, n);
+    LUdecompositionRecursive4Pivot(matrixA, matrixL, matrixU, matrixP, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
     elapsed_time_Pivot = duration.count() * 1.e-9;
