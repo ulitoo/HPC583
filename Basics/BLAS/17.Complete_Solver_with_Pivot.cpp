@@ -765,7 +765,7 @@ int main ( int argc, char* argv[] ) {
     Read_Matrix_file(matrixA, n*n, argv[1]);
     Read_Matrix_file(matrixB, n*n, argv[2]);
     
-    // Backup
+    // Backup A and B Matrices
     Write_A_over_B(matrixA,matrixA_original,n,n);
     Write_A_over_B(matrixB,matrixB_original,n,n);
 
@@ -799,12 +799,13 @@ int main ( int argc, char* argv[] ) {
 
     cout << "\nCheck Accuracy and time of my AX=B (Pivoted):";
     ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, elapsed_time_Pivot+elapsed_time_Solve,n,n);
-
+    
+    // Restore A and B Matrices After Calculation
     Write_A_over_B(matrixA_original,matrixA,n,n);
     Write_A_over_B(matrixB_original,matrixB,n,n); 
 
     // ----------------- Start Non-PIVOTED Algorithm HERE!
-    // Reset Result Matrices
+    // Reset Result Matrices X and Y
     MakeZeroes(matrixY,n,n);
     MakeZeroes(matrixX,n,n);
     
@@ -827,6 +828,7 @@ int main ( int argc, char* argv[] ) {
     cout << "Check Accuracy and time of my AX=B (non-Pivoted):";
     ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, elapsed_time_nonPivot+elapsed_time_Solve,n,n);
 
+    // Restore A and B Matrices After Calculation
     Write_A_over_B(matrixA_original,matrixA,n,n);
     Write_A_over_B(matrixB_original,matrixB,n,n);
 
