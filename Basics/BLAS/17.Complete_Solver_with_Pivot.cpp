@@ -21,7 +21,6 @@ using namespace std;
 
 
 /////////////////////////////     FUNCTIONS
-int recursion_count = 0;
 
 int Read_Matrix_file(double *matrix, int size, char *filename)
 {
@@ -43,13 +42,75 @@ int Read_Matrix_file(double *matrix, int size, char *filename)
     std::cout << "File " << filename << " read correctly!" << std::endl;
     return 0;
 }
-
-double ConditionNumber(double *matrixA,int m,int n)
+void Write_A_over_B(double *matrixA, double *matrixB, int m,int n)
 {
-//  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
-//  The infinity-norm of a square matrix is the maximum of the absolute row sum
-//  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable 
-return 0.0;
+    for (int i = 0; i < m * n; i++)
+    {
+        matrixB[i] = matrixA[i];
+    }
+}
+void InverseMatrix(double *matrixA, int n)
+    {
+        int ipiv[n];
+        int info;
+        // Compute the inverse using LAPACK's dgetrf and dgetri
+        // Perform LU factorization
+        info = LAPACKE_dgetrf(LAPACK_COL_MAJOR, n, n, matrixA, n, ipiv);
+
+        if (info == 0)
+        {
+            // LU factorization succeeded, now compute the inverse
+            info = LAPACKE_dgetri(LAPACK_COL_MAJOR, n, matrixA, n, ipiv);
+
+            if (info != 0)
+            {
+                std::cerr << "Error in LAPACKE_dgetri: " << info << std::endl;
+            }
+        }
+        else
+        {
+            std::cerr << "Error in LAPACKE_dgetrf: " << info << std::endl;
+        }
+    }
+
+double InfinityNorm(double *matrixA, int n)
+{
+    // Find the biggest sum of abs (rows)
+    double max=0.0;
+    double tmp=0.0;
+    for (int i = 0; i < n; i++)
+    {
+        tmp=0.0;
+        for (int j = 0; j < n; j++)
+        {
+            tmp += abs(matrixA[i + (j * n)]);
+        }
+        if (tmp>max)
+        {
+            max=tmp;
+        }
+    }
+    return max;
+}
+
+double ConditionNumber(double *matrixA, int m, int n)
+{
+    //  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
+    //  The infinity-norm of a square matrix is the maximum of the absolute row sum
+    //  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable
+    double *matrixA_original = (double *)malloc(n * n * sizeof(double));
+    Write_A_over_B(matrixA, matrixA_original, n, n);
+    InverseMatrix(matrixA,n);
+
+    double InfNormA, InfNormAinv;
+    InfNormA = InfinityNorm(matrixA, n);
+    InfNormAinv = InfinityNorm(matrixA_original, n);
+    
+    // restore original Matrix
+    Write_A_over_B(matrixA_original, matrixA, n, n);
+    free(matrixA_original);
+    return InfNormA * InfNormAinv;
+
 }
 
 void PrintColMatrix(double *matrix, int m, int n)
@@ -61,19 +122,6 @@ void PrintColMatrix(double *matrix, int m, int n)
             cout << matrix[i + (j * m)] << " ";
         }
         cout << "\n";
-    }
-}
-void NaiveMatrixMultiplyCol(double *matrixa, double *matrixb, double *matrixc, int m, int n, int p)
-{
-    for (int i = 0; i < m; ++i)
-    {
-        for (int j = 0; j < p; ++j)
-        {
-            for (int k = 0; k < n; ++k)
-            {
-                matrixc[i + (j * m)] += matrixa[i + (k * m)] * matrixb[k + (j * n)];
-            }
-        }
     }
 }
 void MakeZeroes(double *matrix, int m, int n)
@@ -118,15 +166,6 @@ int MaxRow(double *matrix, int n)
     return maxrow;
 }
 
-double MatrixAbsDiff(double *matrixa, double *matrixb, int m, int n)
-{
-    double diff = 0.0;
-    for (int i = 0; i < m * n; ++i)
-    {
-        diff += abs(matrixa[i] - matrixb[i]);
-    }
-    return diff;
-}
 double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
@@ -153,13 +192,6 @@ void ColMajor_Transpose(double *matrix, int m, int n)
     }
     free(tmpmatrix);
 }
-void Write_A_over_B(double *matrixA, double *matrixB, int m,int n)
-{
-    for (int i = 0; i < m * n; i++)
-    {
-        matrixB[i] = matrixA[i];
-    }
-}
 void SwapCol_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
 {
     double tmpval;
@@ -178,19 +210,6 @@ void SwapRow_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
         tmpval = matrix[towards+i*m];
         matrix[towards+i*m] = matrix[from+i*m];
         matrix[from+i*m] = tmpval;
-    }
-}
-void TransposeColMajor(double *matrix, int m, int n)
-{
-    double tmpvalue;
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < i; j++)
-        {
-            tmpvalue = matrix[j+(i*m)];
-            matrix[j+(i*m)] = matrix[i+(j*m)];
-            matrix[i+(j*m)] = tmpvalue;
-        }
     }
 }
 
@@ -268,7 +287,6 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
-    recursion_count++;
     if (n==1)
     {
         for (int j = 0; j < p; j++)
@@ -368,7 +386,6 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
 }
 void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, double *matrixX, int n, int p)
 {
-    recursion_count++;
     //cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
@@ -614,18 +631,16 @@ void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Um
     free(matrixP2);
 }
 
-void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time,int n, int p, int recursion_limit)
+void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time,int n, int p)
 {
     double *CalculatedB = (double *)malloc(n * p * sizeof(double));
     MakeZeroes(CalculatedB, n, p);
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM 
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
-    double diff = MatrixAbsDiff(matrixB, CalculatedB, n, p);
     double dist = MatrixDistance(matrixB, CalculatedB, n, p);
-    cout << "\nAbs cumulative Error (AX - B):----------------> : " << diff << "\n";
-    cout << "Vector Distance (AX - B):---------------------> : " << dist << "\n";
-    cout << "Elapsed Time:------------------> : " << elapsed_time << " s.\n\n";
+    cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
+    cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
 
@@ -643,9 +658,8 @@ int main ( int argc, char* argv[] ) {
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
-    auto stop1 = std::chrono::high_resolution_clock::now();
-    auto stop2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    long double elapsed_time_BLAS, elapsed_time_Pivot, elapsed_time_nonPivot, elapsed_time_Solve;
 
     // Alloc Space for MATRICES Needed in Column Major Order
     double *matrixA = (double *)malloc(n * n * sizeof(double));
@@ -657,14 +671,14 @@ int main ( int argc, char* argv[] ) {
     double *matrixY = (double *)malloc(n * n * sizeof(double));
     double *matrixX = (double *)malloc(n * n * sizeof(double));
     double *matrixB_Calc = (double *)malloc(n * n * sizeof(double));
-    double *matrixAbar = (double *)malloc(n * n * sizeof(double));
+    //double *matrixAbar = (double *)malloc(n * n * sizeof(double));
     double *matrixA_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
     double *matrixB_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
 
     // Other Variables
+    double AConditionNumber;
     int INFO, IPIV[n];
     int recursion_limit = 64;
-    long double Speedup;
 
     // READ Matrix A and B from arguments and FILES
     Read_Matrix_file(matrixA, n*n, argv[1]);
@@ -674,52 +688,84 @@ int main ( int argc, char* argv[] ) {
     Write_A_over_B(matrixA,matrixA_original,n,n);
     Write_A_over_B(matrixB,matrixB_original,n,n);
 
-    // ----------------- Start Algorithm HERE!
+    // ----------------- Calculate Condition Number of Matrix A
+
+    AConditionNumber = ConditionNumber(matrixA,n,n);
+    cout << "\nMatrix A Condition Number: " << (AConditionNumber) << "\n";
+    
+    // ----------------- Start PIVOTED Algorithm HERE!
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for PA -> PIVOTED
     LUdecompositionRecursive3Pivot(matrixA, matrixL, matrixU, matrixP, n);
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixB, n, 0.0, matrixBPivot, n);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    elapsed_time_Pivot = duration.count() * 1.e-9;
+
     // Now use BPivot instead of B for Solving LUX=PB -> PAX=PB -> PA=LU
-    stop1 = std::chrono::high_resolution_clock::now();
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixB, n, 0.0, matrixBPivot, n);
     
     // Now Solve system of linear equations given AX=B given B is n x n
     // Solve PAX=PB -> LUX=BPivot -> (2) UX=Y -> (1) LY=BPivot
     // Solve (1) LY=BPivot
+    start = std::chrono::high_resolution_clock::now();
     LowerTriangularSolverRecursiveReal_0(matrixL,matrixBPivot,matrixY,n,n);
-    stop2 = std::chrono::high_resolution_clock::now();
     // Solve (2) UX=Y   
     UpperTriangularSolverRecursiveReal_0(matrixU,matrixY,matrixX,n,n);
     stop = std::chrono::high_resolution_clock::now();
-    
-    // ---------------- Done! Now to Show the Results and Compare with BLAS
- 
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop1 - start);
-    cout << "LU decomposition: " << (duration.count() * 1.e-9) << " s.\n";
-    
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop2 - stop1);
-    cout << "Lower Solve: " << (duration.count() * 1.e-9) << " s.\n";
-    
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - stop2);
-    cout << "Upper Solve: " << (duration.count() * 1.e-9) << " s.\n";
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    elapsed_time_Solve = duration.count() * 1.e-9;
 
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    Speedup = duration.count();
     cout << "\nCheck Accuracy and time of my AX=B (Pivoted):";
-    ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, duration.count() * 1.e-9,n,n,recursion_limit);
+    ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, elapsed_time_Pivot+elapsed_time_Solve,n,n);
+
+    Write_A_over_B(matrixA_original,matrixA,n,n);
+    Write_A_over_B(matrixB_original,matrixB,n,n); 
+
+    // ----------------- Start Non-PIVOTED Algorithm HERE!
+    // Reset Result Matrices
+    MakeZeroes(matrixY,n,n);
+    MakeZeroes(matrixX,n,n);
+    
+    start = std::chrono::high_resolution_clock::now();
+    // Recursive Implementation of LU decomposition for A -> NON - PIVOTED
+    LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);
+    stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    elapsed_time_nonPivot = duration.count() * 1.e-9;
+    
+    // Now Solve system of linear equations given AX=B given B is n x n
+    // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
+    // Solve (1) LY=B
+    start = std::chrono::high_resolution_clock::now();
+    LowerTriangularSolverRecursiveReal_0(matrixL,matrixB,matrixY,n,n);
+    // Solve (2) UX=Y
+    UpperTriangularSolverRecursiveReal_0(matrixU,matrixY,matrixX,n,n);
+    stop = std::chrono::high_resolution_clock::now();
+
+    cout << "Check Accuracy and time of my AX=B (non-Pivoted):";
+    ErrorCalc_Display(matrixA_original,matrixB_original, matrixX, elapsed_time_nonPivot+elapsed_time_Solve,n,n);
 
     Write_A_over_B(matrixA_original,matrixA,n,n);
     Write_A_over_B(matrixB_original,matrixB,n,n);
-    
-    //Solve BLAS and compare with my implementation
+
+    // ---------------- Done! Now to Show the Results and Compare with BLAS
+
+    //   Solve BLAS and compare with my implementation
     start = std::chrono::high_resolution_clock::now();
     LAPACK_dgesv(&n,&n,matrixA,&n,IPIV,matrixB,&n,&INFO);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);  
+    elapsed_time_BLAS = duration.count() * 1.e-9;
     cout << "Check Accuracy and time of BLAS (dgesv): ";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, duration.count() * 1.e-9, n, n,recursion_limit);
+    ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, elapsed_time_BLAS, n, n);
     
-    cout << "Solution Calculation Speedup from BLAS to mine: " << Speedup/duration.count() << "x.\n\n";
+    cout << "Pivot LU decomposition: " << (elapsed_time_Pivot) << " s.\n";
+    cout << "Non-Pivot LU decomposition: " << (elapsed_time_nonPivot) << " s.\n";
+    cout << "Lower + Upper Solve: " << (elapsed_time_Solve) << " s.\n\n";
+        
+    cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_Pivot+elapsed_time_Solve)/elapsed_time_BLAS << "x.\n\n";
+    cout << "Solution Calculation Speedup from BLAS to my_nonPivot: " << (elapsed_time_nonPivot+elapsed_time_Solve)/elapsed_time_BLAS << "x.\n\n";
 
     return 0;
 }
