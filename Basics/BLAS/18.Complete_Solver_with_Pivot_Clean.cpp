@@ -18,7 +18,7 @@ using namespace std;
 //      -With Pivot
 //      -With NO Pivot
 //      -LAPACK BLAS
-//  5. OPTIMIZE PIVOT CODE LUdecompositionRecursive4Pivot
+//  5. OPTIMIZED PIVOT CODE LUdecompositionRecursive4Pivot
 
 /////////////////////////////   General Purpose  FUNCTIONS
 
