@@ -18,10 +18,9 @@ using namespace std;
 //      -With Pivot
 //      -With NO Pivot
 //      -LAPACK BLAS
-//  5. OPTIMIZE PIVOT CODE? LUdecompositionRecursive4Pivot
+//  5. OPTIMIZE PIVOT CODE LUdecompositionRecursive4Pivot
 
-
-/////////////////////////////     FUNCTIONS
+/////////////////////////////   General Purpose  FUNCTIONS
 
 int Read_Matrix_file(double *matrix, int size, char *filename)
 {
@@ -189,7 +188,6 @@ int MaxRow2(double *matrix, int N, int n)
     }
     return maxrow;
 }
-
 double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
@@ -198,35 +196,6 @@ double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
         diff += (matrixa[i] - matrixb[i])*(matrixa[i] - matrixb[i]);
     }
     return sqrt(diff);
-}
-void ColMajor_Transpose(double *matrix, int m, int n)
-{
-    double *tmpmatrix = (double *)malloc(m * n * sizeof(double));
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            tmpmatrix[j + (i * n)] = matrix[i + (j * m)];
-        }
-    }
-    for (int i = 0; i < m * n; i++)
-    {
-        matrix[i] = tmpmatrix[i];
-    }
-    free(tmpmatrix);
-}
-
-void SwapCol_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
-{
-    double tmpval;
-    int towards2=towards*m;
-    int from2=from*m;
-    for (int i = 0; i < m; i++)
-    {
-        tmpval = matrix[i+towards2];
-        matrix[i+towards2] = matrix[i+from2];
-        matrix[i+from2] = tmpval;
-    }
 }
 void SwapRow_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
 {
@@ -239,31 +208,7 @@ void SwapRow_ColMajMatrix(double *matrix,int from, int towards, int m, int n)
     }
 }
 
-void ipiv_to_P(int *ipiv,int n,double *P)
-{
-    MakeIdentity(P,n,n);
-
-    for (int i = 0; i < n; i++)
-    {
-        SwapRow_ColMajMatrix(P,i,ipiv[i],n,n);
-    }
-}
-void ipiv_to_swappedindex(int *ipiv,int n,int *swappedindex)
-{
-    for (int i = 0; i < n; i++)
-    {
-        swappedindex[i] = i;
-    }
-    for (int i = 0; i < n; i++)
-    {
-        int tmp;
-        // swap (tmpPinv [ipiv [i]], tmpPinv[i] )
-        tmp = swappedindex[ipiv[i]];
-        swappedindex[ipiv[i]] = swappedindex[i];
-        swappedindex[i] = tmp;
-    }
-}
-
+/////////////////////////////   Triangular Solver FUNCTIONS
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     //Initialize will Create the submatrices based on the big matrix
@@ -302,6 +247,7 @@ void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C2
 void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
 {
     //Collect Results of Xxx to the big matrix X
+    MakeZeroes(matrixc,m,p);
     int mm = m / 2;
     int mm2 = m - mm;
     int pp = p / 2;
@@ -334,7 +280,6 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
         }
     }
 }
-
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
@@ -353,29 +298,17 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
         int pp2 = p - pp;
         
         double *U11 = (double *)malloc(nn * nn * sizeof(double));
-        MakeZeroes(U11, nn, nn);
         double *U12 = (double *)malloc(nn * nn2 * sizeof(double));
-        MakeZeroes(U12, nn, nn2);
         double *U21 = (double *)malloc(nn2 * nn * sizeof(double));
-        MakeZeroes(U21, nn2, nn);
         double *U22 = (double *)malloc(nn2 * nn2 * sizeof(double));
-        MakeZeroes(U22, nn2, nn2);
         double *B11 = (double *)malloc(nn * pp * sizeof(double));
-        MakeZeroes(B11, nn, pp);
         double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
-        MakeZeroes(B12, nn, pp2);
         double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
-        MakeZeroes(B21, nn2, pp);
         double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        MakeZeroes(B22, nn2, pp2);
         double *X11 = (double *)malloc(nn * pp * sizeof(double));
-        MakeZeroes(X11, nn, pp);
         double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
-        MakeZeroes(X12, nn, pp2);
         double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
-        MakeZeroes(X21, nn2, pp);
         double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        MakeZeroes(X22, nn2, pp2);
 
         // Initializa Axx and Bxx matrices!
         InitializeSubmatrices(matrixU, U11, U12, U21, U22, n,n);
@@ -395,7 +328,6 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
                 for (int k = 0; k < nn2; ++k)
                 {
                     B11[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X21[ k + (j) * nn2]);
-                    // A(i,k)*B(k,j)
                 }
             }
         }
@@ -411,7 +343,6 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
                 for (int k = 0; k < nn2; ++k)
                 {
                     B12[i + ((j) * nn)] -= (U12[i + (k) * nn]) * (X22[ k + (j) * nn2]);
-                    // A(i,k)*B(k,j)
                 }
             }
         }
@@ -437,14 +368,12 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
 }
 void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, double *matrixX, int n, int p)
 {
-    //cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
     {   
         for (int j = 0; j < p; j++)
         {
             matrixX[j] = matrixB[j]/matrixL[0];
-            //matrixSol[B_n1 + (B_p1 + j)*major_n] = matrixB[B_n1 + (B_p1 + j)*major_n]/matrixL[L_n1 + L_n2*major_n];  
         }
     }
     else
@@ -455,40 +384,27 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
         int pp2 = p - pp;
 
         double *L11 = (double *)malloc(nn * nn * sizeof(double));
-        MakeZeroes(L11, nn, nn);
         double *L12 = (double *)malloc(nn * nn2 * sizeof(double));
-        MakeZeroes(L12, nn, nn2);
         double *L21 = (double *)malloc(nn2 * nn * sizeof(double));
-        MakeZeroes(L21, nn2, nn);
         double *L22 = (double *)malloc(nn2 * nn2 * sizeof(double));
-        MakeZeroes(L22, nn2, nn2);
         double *B11 = (double *)malloc(nn * pp * sizeof(double));
-        MakeZeroes(B11, nn, pp);
         double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
-        MakeZeroes(B12, nn, pp2);
         double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
-        MakeZeroes(B21, nn2, pp);
         double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        MakeZeroes(B22, nn2, pp2);
         double *X11 = (double *)malloc(nn * pp * sizeof(double));
-        MakeZeroes(X11, nn, pp);
         double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
-        MakeZeroes(X12, nn, pp2);
         double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
-        MakeZeroes(X21, nn2, pp);
         double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        MakeZeroes(X22, nn2, pp2);
         
-        // Initializa Axx and Bxx matrices!
+        // Initialize Axx and Bxx matrices!
         InitializeSubmatrices(matrixL, L11, L12, L21, L22, n,n);
         InitializeSubmatrices(matrixB, B11, B12, B21, B22, n,p);
 
         // Recurse L11 X11 = B11
         LowerTriangularSolverRecursiveReal_0(L11,B11,X11,nn,pp);
-        //LowerTriangularSolverRecursiveReal(matrixL,L_n1,L_n2,matrixB,B_n1,B_p1,matrixSol,major_n,nn,pp);
+
         // Recurse L11 X12 = B12
         LowerTriangularSolverRecursiveReal_0(L11,B12,X12,nn,pp2);
-        //LowerTriangularSolverRecursiveReal(matrixL,L_n1,L_n2,matrixB,B_n1,B_p1+pp,matrixSol,major_n,nn,pp2);
     
         // PHASE 2: CALCULATE THE NEW B's for next Phase     
         // B21' = B21 - L21 X11
@@ -499,15 +415,12 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
                 for (int k = 0; k < nn; ++k)
                 {
                     B21[i + (j*nn2)] -= (L21[i + (k*nn2)]) * (X11[ k + (j) * nn]);
-                    //matrixB[B_n1 + nn + i + ((B_p1 + j) * major_n)] -= (matrixL[L_n1 + nn + i + (L_n2 + k) * major_n]) * (matrixSol[B_n1 + k + (B_p1 + j) * major_n]);
-                    // A(i,k)*B(k,j)
                 }
             }
         }
         // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
         // Recurse L22 X21 = B21'
         LowerTriangularSolverRecursiveReal_0(L22,B21,X21,nn2,pp);
-        //LowerTriangularSolverRecursiveReal(matrixL,L_n1+nn,L_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
 
         // B22' = B22 - L21 X12
         for (int i = 0; i < nn2; ++i)
@@ -517,14 +430,11 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
                 for (int k = 0; k < nn; ++k)
                 {
                     B22[i + (j*nn2)] -= (L21[i + (k*nn2)]) * (X12[ k + (j) * nn]);
-                    //matrixB[B_n1 + nn + i + ((B_p1 + pp + j) * major_n)] -= (matrixL[L_n1 + nn + i + (L_n2 + k) * major_n]) * (matrixSol[B_n1 + k + (B_p1 + pp + j) * major_n]);
-                    // A(i,k)*B(k,j)
                 }
             }
         }
         // Recurse L22 X22 = B22'
         LowerTriangularSolverRecursiveReal_0(L22,B22,X22,nn2,pp2);
-        //LowerTriangularSolverRecursiveReal(matrixL,L_n1+nn,L_n2+nn,matrixB,B_n1+nn,B_p1+pp,matrixSol,major_n,nn2,pp2);
 
         // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
         CollectSubmatrices(matrixX,X11,X12,X21,X22,n,p);
@@ -544,6 +454,16 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
     }   
 }
 
+/////////////////////////////   LU Decomposition FUNCTIONS
+void ipiv_to_P(int *ipiv,int n,double *P)
+{
+    MakeIdentity(P,n,n);
+
+    for (int i = 0; i < n; i++)
+    {
+        SwapRow_ColMajMatrix(P,i,ipiv[i],n,n);
+    }
+}
 void SchurComplement(double *matrix, int N, int n)
 {
     int offset = (N - n);
@@ -555,7 +475,8 @@ void SchurComplement(double *matrix, int N, int n)
         for (int j = 0; j < (n-1); j++)
         {
             //This is in Column Major Order
-            matrix[i2+((j+1)*N)] = matrix[(i2)+((j+1)*N)] - ((matrix[offset2+(j+1)*N]) * (matrix[i+1+(offset2)]) / matrix[offset2]) ;
+            int k=(j+1)*N;
+            matrix[i2+k] = matrix[(i2)+(k)] - ((matrix[offset2+k]) * (matrix[i+1+(offset2)]) / matrix[offset2]) ;
         }   
     }
 }
@@ -605,239 +526,33 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
         LUdecompositionRecursive2(matrix, Lmatrix, Umatrix, N, n-1);
     }
 }
-void LUdecompositionRecursive3Pivot(double *Amatrix, double *Lmatrix, double *Umatrix, double *Pmatrix, int n)
-{
-    //  do this with NO offsets just passing temporary (m allocated) matrices in recursion loop
-    double *matrixP1 = (double *)malloc(n * n * sizeof(double)); 
-    double *matrixP2 = (double *)malloc(n * n * sizeof(double)); 
-    double *matrixP22 = (double *)malloc((n-1) * (n-1) * sizeof(double)); 
-    double *matrixS22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixL22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixU22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-
-    // Assume square Matrix for simplicity
-    // This version relies on Malloc of smaller matrices
-
-    // MaxRow index  exchanged with index n in the first case is 0
-    int maxrow = MaxRow(Amatrix,n); 
-    MakeIdentity(matrixP1,n,n);
-    // Permutation 
-    SwapRow_ColMajMatrix(matrixP1,0, maxrow, n, n);
-    SwapRow_ColMajMatrix(Amatrix,0, maxrow, n, n);
-    // Amatrix is now Amatrixbar(permutation done)
-    matrixP2[0] = 1.0;
-    
-    //P2 is All Zeros, this is redundant
-    for (int i = 1; i < n; i++)
-    {
-        matrixP2[i * n] = 0.0;
-        matrixP2[i] = 0.0;
-    }
-    
-
-    Umatrix[0] = Amatrix[0];  
-    Lmatrix[0] = 1.0;
-
-    if (n == 2)
-    {
-        Umatrix[3] = Amatrix[3] - Amatrix[1] * Amatrix[2] / Amatrix[0];
-        Lmatrix[3] = 1.0;
-        Lmatrix[1] = Amatrix[1] / Amatrix[0] ;  
-        //Lmatrix[2] = 0.0; Redundant, Already Zero 
-        Umatrix[2] = Amatrix[2];
-        //Umatrix[1] = 0.0; Redundant, Already Zero
-        matrixP2[3] = 1.0;
-    }
-    else
-    {
-        SchurComplement2(Amatrix, n);
-        for (int i = 0; i < n - 1; i++)
-        {
-            for (int j = 0; j < n - 1; j++)
-            {
-                matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
-            }
-        }
-        LUdecompositionRecursive3Pivot(matrixS22, matrixL22, matrixU22, matrixP22, n-1);
-        for (int i = 1; i < n; i++)
-        {
-            //Lmatrix[i * n] = 0.0; Redundant, Already Zero
-            Umatrix[i * n] = Amatrix[i * n];
-            //Umatrix[i] = 0.0; Redundant, Already Zero
-            for (int j = 1; j < n; j++)
-            {
-                Lmatrix[i] += matrixP22[(i-1)+(j-1)*(n-1)] * Amatrix[j] / Amatrix[0];
-                matrixP2[i + j * n] = matrixP22[i - 1 + (j - 1) * (n - 1)];
-                Lmatrix[i + j * n] = matrixL22[i - 1 + (j - 1) * (n - 1)];
-                Umatrix[i + j * n] = matrixU22[i - 1 + (j - 1) * (n - 1)];
-            }
-        }
-    }
-
-    //End step is calculate the Pmatrix 
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP2, n, matrixP1, n, 0.0, Pmatrix, n);
-
-    free(matrixL22);
-    free(matrixU22);
-    free(matrixS22);
-    free(matrixP22);
-    free(matrixP1);
-    free(matrixP2);
-}
-void LUdecompositionRecursive4Pivot_WorkingDRAFT(double *AmatrixBIG, double *LmatrixBIG, double *UmatrixBIG, double *Amatrix, double *Lmatrix, double *Umatrix, int *IPIV, int N, int n)
-{
-    //  TRY do this with offsets WITHOUT MALLOC
-    double *matrixP22 = (double *)malloc((n-1) * (n-1) * sizeof(double)); 
-    double *matrixS22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixL22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    double *matrixU22 = (double *)malloc((n-1) * (n-1) * sizeof(double));
-    int IPIVtemp[n-1];
-    int offset = (N-n);
-    int offset2 = N*offset;
-    int offset3 = (offset)+offset2;
-    int k,i2;
-
-    MakeZeroes(matrixP22,n-1,n-1);
-    MakeZeroes(matrixS22,n-1,n-1);
-    MakeZeroes(matrixL22,n-1,n-1);
-    MakeZeroes(matrixU22,n-1,n-1);
-    
-    cout << "\nPrior SWAP Schur and RECURRENCE BIG A so far:"<< n <<"\n";
-    PrintColMatrix(AmatrixBIG,N,N);
-
-    // Assume square Matrix for simplicity
-    // This version relies on Malloc of smaller matrices
-    int maxrow = MaxRow(Amatrix,n);
-    int maxrow2 = MaxRow2(AmatrixBIG,N,n);
-    IPIV[offset]=offset+maxrow; // Tracks ROW Exchange
-    // Permutation 
-    SwapRow_ColMajMatrix(Amatrix,0, maxrow, n, n);
-    //////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    SwapRow_ColMajMatrix(AmatrixBIG , offset, maxrow2, N, N); /////////////////////  Should the permutation happen only in S22? internally????? check it out!!!!!!!!!!!!!!
-    // Amatrix is now Amatrixbar(permutation done)
-
-    Umatrix[0] = Amatrix[0];  
-    Lmatrix[0] = 1.0;
-    ///////////////////////////////
-    UmatrixBIG[(offset)*(N+1)] = AmatrixBIG[(offset)*(N+1)];
-    LmatrixBIG[(offset)*(N+1)] = 1.0;
-
-    cout << "\nAFTER SWAP PRIOR Schur and RECURRENCE BIG A so far:"<< n <<"\n";
-    cout << "\nSWAP "<< offset << " with "<<maxrow2<<"\n";
-    PrintColMatrix(AmatrixBIG,N,N);
-
-    if (n == 2)
-    {
-        Umatrix[3] = Amatrix[3] - Amatrix[1] * Amatrix[2] / Amatrix[0];
-        Lmatrix[3] = 1.0;
-        Lmatrix[1] = Amatrix[1] / Amatrix[0] ;  
-        //Lmatrix[2] = 0.0; Redundant, Already Zero 
-        Umatrix[2] = Amatrix[2];
-        //Umatrix[1] = 0.0; Redundant, Already Zero
-        //matrixP2[3] = 1.0;
-        IPIV[N-1]=N-1; // Last Row does NOT change!
-        /////////////////////////////////////////////////////////////////////
-        UmatrixBIG[(offset+1)+(offset+1)*N] = AmatrixBIG[(offset+1)+(offset+1)*N] - AmatrixBIG[(offset+1)+(offset)*N]*AmatrixBIG[(offset)+(offset+1)*N]/AmatrixBIG[(offset)+(offset)*N];
-        LmatrixBIG[(offset+1)+(offset+1)*N] = 1.0;
-        
-        LmatrixBIG[(offset+1)+(offset)*N] = AmatrixBIG[(offset+1)+(offset)*N] / AmatrixBIG[(offset)+(offset)*N] ;  
-        UmatrixBIG[(offset)+(offset+1)*N] = AmatrixBIG[(offset)+(offset+1)*N];
-
-    }
-    else
-    {
-        SchurComplement2(Amatrix, n);
-        cout << "\nPrior Schur and RECURRENCE BIG A so far:\n";
-        PrintColMatrix(AmatrixBIG,N,N);
-        SchurComplement(AmatrixBIG,N,n);
-        for (int i = 0; i < n - 1; i++)
-        {
-            for (int j = 0; j < n - 1; j++)
-            {
-                matrixS22[i + j * (n-1)] = Amatrix[1 + i + (1 + j) * n];
-            }
-        }
-
-        cout << "\nPrior RECURRENCE ASmall:\n";
-        PrintColMatrix(matrixS22,n,n);
-
-        cout << "\nPrior RECURRENCE S22:\n";
-        PrintColMatrix(matrixS22,n-1,n-1);
-
-        cout << "\nPrior RECURRENCE BIG A so far:\n";
-        PrintColMatrix(AmatrixBIG,N,N);
-
-        LUdecompositionRecursive4Pivot_WorkingDRAFT(AmatrixBIG,LmatrixBIG,UmatrixBIG,matrixS22, matrixL22, matrixU22, IPIV, N, n-1);
-    
-        //Temporary IPIV to calculate P22 in post Recursion
-        for (int i = 0; i < (n-1); i++)
-        {
-            IPIVtemp[i] = IPIV[i+(N-n)+1]-((N-n)+1);
-        }
-
-        //permutation matrix P22 based on temporary IPIV (permutation swap vector)
-        ipiv_to_P(IPIVtemp, n - 1, matrixP22);
-
-        for (int i = 1; i < n; i++)
-        {
-            //Lmatrix[i * n] = 0.0; Redundant, Already Zero
-            Umatrix[i * n] = Amatrix[i * n];
-            //Umatrix[i] = 0.0; Redundant, Already Zero
-
-            k=i*N+offset3;
-            i2=i+offset3;
-            // offset*N unnecesary repeated calculations!!!!!!!!!!!!!!
-            //LmatrixBIG[i2] = AmatrixBIG[i2] / AmatrixBIG[offset3] ;
-            //Lmatrix[j] = 0.0;  Redundant, Already Zero 
-            UmatrixBIG[k] = AmatrixBIG[k];
-
-            for (int j = 1; j < n; j++)
-            {
-                LmatrixBIG[i2] += matrixP22[(i-1)+(j-1)*(n-1)] * AmatrixBIG[i2] / AmatrixBIG[offset3] ;
-                Lmatrix[i] += matrixP22[(i-1)+(j-1)*(n-1)] * Amatrix[j] / Amatrix[0];
-                Lmatrix[i + j * n] = matrixL22[i - 1 + (j - 1) * (n - 1)];
-                Umatrix[i + j * n] = matrixU22[i - 1 + (j - 1) * (n - 1)];
-            }
-        }     
-        cout << "\nAfter RECURRENCE BIG A so far :\n";
-        PrintColMatrix(AmatrixBIG,N,N);
-
-
-    }
-
-    free(matrixL22);
-    free(matrixU22);
-    free(matrixS22);
-    free(matrixP22);
-}
 void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, double *UmatrixBIG, int *IPIV, int N, int n)
 {
     //   WITHOUT MALLOC
     int offset = (N-n);
     int offset2 = N*offset;
     int offset3 = (offset)+offset2;
+    int offset4 = (offset)*(N+1);
     int k,i2;
 
-    // Assume square Matrix for simplicity
-    int maxrow2 = MaxRow2(AmatrixBIG,N,n);
-    IPIV[offset]=maxrow2; // Tracks ROW Exchange
+    // Assume square Matrices for simplicity
+    IPIV[offset]=MaxRow2(AmatrixBIG,N,n); // Tracks ROW Exchange
     // Permutation 
-    SwapRow_ColMajMatrix(AmatrixBIG, offset, maxrow2, N, N); 
+    SwapRow_ColMajMatrix(AmatrixBIG, offset, IPIV[offset], N, N); 
     // Amatrix is now Amatrixbar(permutation done)
 
-    UmatrixBIG[(offset)*(N+1)] = AmatrixBIG[(offset)*(N+1)];
-    LmatrixBIG[(offset)*(N+1)] = 1.0;
+    UmatrixBIG[(offset4)] = AmatrixBIG[(offset4)];
+    LmatrixBIG[(offset4)] = 1.0;
 
     if (n == 2)
     {
         IPIV[N-1]=N-1; // Last Row does NOT change!
 
-        UmatrixBIG[(offset+1)+(offset+1)*N] = AmatrixBIG[(offset+1)+(offset+1)*N] - AmatrixBIG[(offset+1)+(offset)*N]*AmatrixBIG[(offset)+(offset+1)*N]/AmatrixBIG[(offset)+(offset)*N];
-        LmatrixBIG[(offset+1)+(offset+1)*N] = 1.0;
+        UmatrixBIG[(offset4+N+1)] = AmatrixBIG[(offset4+N+1)] - AmatrixBIG[(offset4+1)]*AmatrixBIG[(offset4+N)]/AmatrixBIG[(offset4)];
+        LmatrixBIG[(offset4+N+1)] = 1.0;
         
-        LmatrixBIG[(offset+1)+(offset)*N] = AmatrixBIG[(offset+1)+(offset)*N] / AmatrixBIG[(offset)+(offset)*N] ;  
-        UmatrixBIG[(offset)+(offset+1)*N] = AmatrixBIG[(offset)+(offset+1)*N];
-
+        LmatrixBIG[(offset4+1)] = AmatrixBIG[(offset4+1)] / AmatrixBIG[offset4] ;  
+        UmatrixBIG[(offset4+N)] = AmatrixBIG[(offset4+N)];
     }
     else
     {
@@ -899,7 +614,6 @@ int main ( int argc, char* argv[] ) {
     // Other Variables
     double AConditionNumber;
     int INFO, IPIV[n], IPIVmine[n];
-    //int recursion_limit = 64;
 
     // READ Matrix A and B from arguments and FILES
     Read_Matrix_file(matrixA, n*n, argv[1]);
