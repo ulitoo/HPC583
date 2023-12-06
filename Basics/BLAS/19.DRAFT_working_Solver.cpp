@@ -279,15 +279,13 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
         }
     }
 }
+
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
     if (n == 1)
     {
-        for (int j = 0; j < p; j++)
-        {
-            matrixX[j] = matrixB[j] / matrixU[0];
-        }
+            matrixX[0] = matrixB[0] / matrixU[0];
     }
     else
     {
@@ -332,10 +330,10 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
                 }
             }
         }
+          
         // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
         // Recurse U11 X11 = B11'
         UpperTriangularSolverRecursiveReal_0(U11, B11, X11, nn, pp);
-
         // Recurse U11 X12 = B12'
         UpperTriangularSolverRecursiveReal_0(U11, B12, X12, nn, pp2);
 
@@ -361,10 +359,7 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
     {
-        for (int j = 0; j < p; j++)
-        {
-            matrixX[j] = matrixB[j] / matrixL[0];
-        }
+        matrixX[0] = matrixB[0] / matrixL[0];
     }
     else
     {
@@ -407,13 +402,14 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
                 {
                     B21[i + (j * nn2)] -= (L21[i + (k * nn2)]) * (X11[k + (j)*nn]);
                     B22[i + (j * nn2)] -= (L21[i + (k * nn2)]) * (X12[k + (j)*nn]);
+                    // Assumes even matrix (if not, you cannot mix these 2 and need j<pp2 )
                 }
             }
         }
+
         // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
         // Recurse L22 X21 = B21'
         LowerTriangularSolverRecursiveReal_0(L22, B21, X21, nn2, pp);
-
         // Recurse L22 X22 = B22'
         LowerTriangularSolverRecursiveReal_0(L22, B22, X22, nn2, pp2);
 
@@ -432,6 +428,89 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
         free(X12);
         free(X21);
         free(X22);
+    }
+}
+
+void LowerTriangularSolverRecursiveReal_1even(double *BIGL, int lm, int ln, double *BIGB, int bm, int bn, double *BIGX,int xm, int xn, int n, int N)
+{
+    // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
+    if (n == 1)
+    {
+        BIGX[xm+N*xn] = BIGB[bm+N*bn] / BIGL[lm+N*ln];
+    }
+    else
+    {
+        int nn = n / 2;
+
+        // Recurse L11 X11 = B11
+        LowerTriangularSolverRecursiveReal_1even(BIGL,lm+0,ln+0,BIGB,bm+0,bn+0, BIGX,xm+0,xn+0, nn, N);
+
+        // Recurse L11 X12 = B12
+        LowerTriangularSolverRecursiveReal_1even(BIGL,lm+0,ln+0,BIGB,bm+0,bn+nn, BIGX,xm+0,xn+nn, nn,N);
+
+        // PHASE 2: CALCULATE THE NEW B's for next Phase
+        // B21' = B21 - L21 X11
+        // B22' = B22 - L21 X12
+
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < n; ++j)
+            {
+                for (int k = 0; k < nn; ++k)
+                {
+                    BIGB[i + bm + nn + ((j + bn) * N)] -= (BIGL[i + lm + nn + ( k + ln ) * N]) * (BIGX[k + xm + ((j + xn) * N)]);
+                }
+            }
+        }
+
+        // Recurse L22 X21 = B21'
+        LowerTriangularSolverRecursiveReal_1even(BIGL,lm+nn,ln+nn,BIGB,bm+nn,bn+0, BIGX,xm+nn,xn+0, nn,N);
+
+        // Recurse L22 X22 = B22'
+        LowerTriangularSolverRecursiveReal_1even(BIGL,lm+nn,ln+nn,BIGB,bm+nn,bn+nn, BIGX,xm+nn,xn+nn, nn,N);
+    }
+}
+void UpperTriangularSolverRecursiveReal_1even(double *BIGU, int lm, int ln, double *BIGB, int bm, int bn, double *BIGX,int xm, int xn, int n, int N)
+{
+    // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
+    if (n == 1)
+    {
+        BIGX[xm+N*xn] = BIGB[bm+N*bn] / BIGU[lm+N*ln];
+    }
+    else
+    {
+        int nn = n / 2;
+
+        // Recurse U22 X21 = B21
+        UpperTriangularSolverRecursiveReal_1even(BIGU, lm + nn, ln + nn, BIGB, bm + nn, bn + 0, BIGX, xm + nn, xn + 0, nn, N);
+
+        // Recurse U22 X22 = B22
+        UpperTriangularSolverRecursiveReal_1even(BIGU, lm + nn, ln + nn, BIGB, bm + nn, bn + nn, BIGX, xm + nn, xn + nn, nn, N);
+
+        // PHASE 2: CALCULATE THE NEW B's for next Phase
+        // B11' = B11 - U12 X21
+        // B12' = B12 - U12 X22
+
+        int i3=xm+nn+N*xn;
+        for (int i = 0; i < nn; ++i)
+        {
+            int i2=i+lm+(nn+ln)*N;
+            int i4=i+bm+bn*N;
+            for (int j = 0; j < n; ++j)
+            {
+                
+                for (int k = 0; k < nn; ++k)
+                {
+                    BIGB[i4 + (j * N)] -= (BIGU[i2 + k * N]) * (BIGX[k + i3 + (j * N)]);
+                }
+            }
+        }
+
+        // Recurse U11 X11 = B11'
+        UpperTriangularSolverRecursiveReal_1even(BIGU, lm + 0, ln + 0, BIGB, bm + 0, bn + 0, BIGX, xm + 0, xn + 0, nn, N);
+
+        // Recurse U11 X12 = B12'
+        UpperTriangularSolverRecursiveReal_1even(BIGU, lm + 0, ln + 0, BIGB, bm + 0, bn + nn, BIGX, xm + 0, xn + nn, nn, N);
     }
 }
 
@@ -634,6 +713,10 @@ int main(int argc, char *argv[])
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Solve = duration.count() * 1.e-9;
+
+    //Not intermediate Malloc Version
+    //LowerTriangularSolverRecursiveReal_1even(matrixL,0,0,matrixBPivot,0,0, matrixY,0,0, n, n);
+    //UpperTriangularSolverRecursiveReal_1even(matrixU,0,0,matrixY,0,0, matrixX,0,0, n, n);
 
     cout << "\nCheck Accuracy and time of my AX=B (Pivoted):";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_Pivot + elapsed_time_Solve, n, n);
