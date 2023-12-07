@@ -435,6 +435,37 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
     }
 }
 
+void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            double tempval = 0;
+            for (int k = 0; k < i; k++)
+            {
+                tempval += matrixL[i + k * n] * matrixSol[k + j * n];
+            }
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixL[i * n + i];
+        }
+    }
+}
+void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = n - 1; i >= 0; i--)
+        {
+            double tempval = 0;
+            for (int k = n - 1; k > i; k--)
+            {
+                tempval += matrixU[i + k * n] * matrixSol[k + j * n];
+            }
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixU[i * n + i];
+        }
+    }
+}
+
 /////////////////////////////   LU Decomposition FUNCTIONS
 void ipiv_to_P(int *ipiv, int n, double *P)
 {
@@ -629,8 +660,10 @@ int main(int argc, char *argv[])
     // Solve (1) LY=BPivot
     start = std::chrono::high_resolution_clock::now();
     LowerTriangularSolverRecursiveReal_0(matrixL, matrixBPivot, matrixY, n, n);
+    //LowerTriangularSolverNaiveReal(matrixL, matrixBPivot, matrixY, n);
     // Solve (2) UX=Y
     UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
+    //UpperTriangularSolverNaiveReal(matrixU, matrixY, matrixX, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Solve = duration.count() * 1.e-9;
