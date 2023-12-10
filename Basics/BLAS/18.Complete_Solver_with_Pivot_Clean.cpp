@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <thread>
 #include <lapacke.h>
+//#include <scalapack.h>
 
 using namespace std;
 
