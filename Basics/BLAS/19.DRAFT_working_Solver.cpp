@@ -20,6 +20,8 @@ using namespace std;
 //      -LAPACK BLAS
 //  5. OPTIMIZED PIVOT CODE LUdecompositionRecursive4Pivot
 
+int depth_limit = 1;
+
 /////////////////////////////   General Purpose  FUNCTIONS
 
 int Read_Matrix_file(double *matrix, int size, char *filename)
@@ -280,6 +282,37 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
     }
 }
 
+void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            double tempval = 0;
+            for (int k = 0; k < i; k++)
+            {
+                tempval += matrixL[i + k * n] * matrixSol[k + j * n];
+            }
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixL[i * n + i];
+        }
+    }
+}
+void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *matrixSol, int n)
+{
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = n - 1; i >= 0; i--)
+        {
+            double tempval = 0;
+            for (int k = n - 1; k > i; k--)
+            {
+                tempval += matrixU[i + k * n] * matrixSol[k + j * n];
+            }
+            matrixSol[j * n + i] = (matrixB[j * n + i] - tempval) / matrixU[i * n + i];
+        }
+    }
+}
+
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
@@ -412,6 +445,157 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
         LowerTriangularSolverRecursiveReal_0(L22, B21, X21, nn2, pp);
         // Recurse L22 X22 = B22'
         LowerTriangularSolverRecursiveReal_0(L22, B22, X22, nn2, pp2);
+
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixX, X11, X12, X21, X22, n, p);
+
+        free(L11);
+        free(L12);
+        free(L21);
+        free(L22);
+        free(B11);
+        free(B12);
+        free(B21);
+        free(B22);
+        free(X11);
+        free(X12);
+        free(X21);
+        free(X22);
+    }
+}
+
+void UpperTriangularSolverRecursiveReal_1(double *matrixU, double *matrixB, double *matrixX, int n, int p)
+{
+    // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
+    if (n <= depth_limit)
+    {
+        UpperTriangularSolverNaiveReal(matrixU, matrixB, matrixX,n);
+    }
+    else
+    {
+        int nn = n / 2;
+        int nn2 = n - nn;
+        int pp = p / 2;
+        int pp2 = p - pp;
+
+        double *U11 = (double *)malloc(nn * nn * sizeof(double));
+        double *U12 = (double *)malloc(nn * nn2 * sizeof(double));
+        double *U21 = (double *)malloc(nn2 * nn * sizeof(double));
+        double *U22 = (double *)malloc(nn2 * nn2 * sizeof(double));
+        double *B11 = (double *)malloc(nn * pp * sizeof(double));
+        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
+        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
+        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        double *X11 = (double *)malloc(nn * pp * sizeof(double));
+        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
+        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
+        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+
+        // Initializa Axx and Bxx matrices!
+        InitializeSubmatrices(matrixU, U11, U12, U21, U22, n, n);
+        InitializeSubmatrices(matrixB, B11, B12, B21, B22, n, p);
+
+        // Recurse U22 X21 = B21
+        UpperTriangularSolverRecursiveReal_1(U22, B21, X21, nn2, pp);
+        // Recurse U22 X22 = B22
+        UpperTriangularSolverRecursiveReal_1(U22, B22, X22, nn2, pp2);
+
+        // PHASE 2: CALCULATE THE NEW B's for next Phase
+        // B11' = B11 - U12 X21
+        // B12' = B12 - U12 X22
+        for (int i = 0; i < nn; ++i)
+        {
+            for (int j = 0; j < pp; ++j)
+            {
+                for (int k = 0; k < nn2; ++k)
+                {
+                    B11[i + ((j)*nn)] -= (U12[i + (k)*nn]) * (X21[k + (j)*nn2]);
+                    B12[i + ((j)*nn)] -= (U12[i + (k)*nn]) * (X22[k + (j)*nn2]);
+                }
+            }
+        }
+          
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // Recurse U11 X11 = B11'
+        UpperTriangularSolverRecursiveReal_1(U11, B11, X11, nn, pp);
+        // Recurse U11 X12 = B12'
+        UpperTriangularSolverRecursiveReal_1(U11, B12, X12, nn, pp2);
+
+        // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
+        CollectSubmatrices(matrixX, X11, X12, X21, X22, n, p);
+
+        free(U11);
+        free(U12);
+        free(U21);
+        free(U22);
+        free(B11);
+        free(B12);
+        free(B21);
+        free(B22);
+        free(X11);
+        free(X12);
+        free(X21);
+        free(X22);
+    }
+}
+void LowerTriangularSolverRecursiveReal_1(double *matrixL, double *matrixB, double *matrixX, int n, int p)
+{
+    // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
+    if (n <= depth_limit)
+    {
+        LowerTriangularSolverNaiveReal(matrixL, matrixB, matrixX,n);
+    }
+    else
+    {
+        int nn = n / 2;
+        int nn2 = n - nn; // Size of right or lower side covers for odd cases
+        int pp = (p / 2);
+        int pp2 = p - pp;
+
+        double *L11 = (double *)malloc(nn * nn * sizeof(double));
+        double *L12 = (double *)malloc(nn * nn2 * sizeof(double));
+        double *L21 = (double *)malloc(nn2 * nn * sizeof(double));
+        double *L22 = (double *)malloc(nn2 * nn2 * sizeof(double));
+        double *B11 = (double *)malloc(nn * pp * sizeof(double));
+        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
+        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
+        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        double *X11 = (double *)malloc(nn * pp * sizeof(double));
+        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
+        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
+        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+
+        // Initialize Axx and Bxx matrices!
+        InitializeSubmatrices(matrixL, L11, L12, L21, L22, n, n);
+        InitializeSubmatrices(matrixB, B11, B12, B21, B22, n, p);
+
+        // Recurse L11 X11 = B11
+        LowerTriangularSolverRecursiveReal_1(L11, B11, X11, nn, pp);
+
+        // Recurse L11 X12 = B12
+        LowerTriangularSolverRecursiveReal_1(L11, B12, X12, nn, pp2);
+
+        // PHASE 2: CALCULATE THE NEW B's for next Phase
+        // B21' = B21 - L21 X11
+        // B22' = B22 - L21 X12
+        for (int i = 0; i < nn2; ++i)
+        {
+            for (int j = 0; j < pp; ++j)
+            {
+                for (int k = 0; k < nn; ++k)
+                {
+                    B21[i + (j * nn2)] -= (L21[i + (k * nn2)]) * (X11[k + (j)*nn]);
+                    B22[i + (j * nn2)] -= (L21[i + (k * nn2)]) * (X12[k + (j)*nn]);
+                    // Assumes even matrix (if not, you cannot mix these 2 and need j<pp2 )
+                }
+            }
+        }
+
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // Recurse L22 X21 = B21'
+        LowerTriangularSolverRecursiveReal_1(L22, B21, X21, nn2, pp);
+        // Recurse L22 X22 = B22'
+        LowerTriangularSolverRecursiveReal_1(L22, B22, X22, nn2, pp2);
 
         // At the end Collect pieces of matrixc = matrixc + C11 + C12 + C21 + C22 and done!
         CollectSubmatrices(matrixX, X11, X12, X21, X22, n, p);
@@ -586,6 +770,72 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
         LUdecompositionRecursive2(matrix, Lmatrix, Umatrix, N, n - 1);
     }
 }
+
+void doolittleLUDecomposition(double *matrixA, double *matrixL, double *matrixU, int size, int N) {
+    int offset=N-size;
+    for (int i = 0+offset; i < size+offset; i++) {
+        // Upper Triangular Matrix (U)
+        for (int k = i; k < size+offset; k++) {
+            double sum = 0.0;
+            for (int j = 0+offset; j < i; j++) {
+                sum += matrixL[j * N + i] * matrixU[j + N * k];
+            }
+            matrixU[i + N * k] = matrixA[i + N * k] - sum;
+        }
+
+        // Lower Triangular Matrix (L)
+        for (int k = i; k < size+offset; k++) {
+            if (i == k) {
+                matrixL[i * N + i] = 1.0; // Diagonal elements of L are set to 1
+            } else {
+                double sum = 0.0;
+                for (int j = 0+offset; j < i; j++) {
+                    sum += matrixL[k + N * j] * matrixU[j + N * i];
+                }
+                matrixL[k + N * i] = (matrixA[k + N * i] - sum) / matrixU[i * N + i];
+            }
+        }
+    }
+}
+void LUdecompositionRecursive3(double *matrix, double *Lmatrix, double *Umatrix, int N, int n)
+{
+    // Assume square Matrix for simplicity
+    // This will stop at depth_limit
+
+    int offset = (N - n);
+    int offset2 = N * offset;
+    int offset3 = (offset) + offset2;
+    int j, i2;
+    Umatrix[(offset) * (N + 1)] = matrix[(offset) * (N + 1)];
+    Lmatrix[(offset) * (N + 1)] = 1.0;
+
+    for (int i = 1; i < n; i++)
+    {
+        j = i * N + offset3;
+        i2 = i + offset3;
+        // offset*N unnecesary repeated calculations!!!!!!!!!!!!!!
+        Lmatrix[i2] = matrix[i2] / matrix[offset3];
+        // Lmatrix[j] = 0.0;  Redundant, Already Zero
+        Umatrix[j] = matrix[j];
+        // Umatrix[i2] = 0.0; Redundant, Already Zero
+    }
+
+    //if (n == 2)
+    //{
+    //    Umatrix[(offset + 1) + (offset + 1) * N] = matrix[(offset + 1) + (offset + 1) * N] - matrix[(offset + 1) + (offset)*N] * matrix[(offset) + (offset + 1) * N] / matrix[(offset) + (offset)*N];
+    //    Lmatrix[(offset + 1) + (offset + 1) * N] = 1.0;
+    //}
+    if (n<=depth_limit)
+    {
+        doolittleLUDecomposition(matrix,Lmatrix,Umatrix,n,N);
+    }
+    else
+    {
+        SchurComplement(matrix, N, n);
+        LUdecompositionRecursive3(matrix, Lmatrix, Umatrix, N, n - 1);
+    }
+}
+
 void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, double *UmatrixBIG, int *IPIV, int N, int n)
 {
     //   WITHOUT MALLOC
@@ -646,18 +896,19 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        std::cerr << "Usage: " << argv[0] << " <filename A> <filename B> rank " << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <filename A> <filename B> rank depth_limit " << std::endl;
         return 1;
     }
     const int n = std::atoi(argv[3]); // rank
+    depth_limit = std::atoi(argv[4]); // depth Limit
 
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    long double elapsed_time_BLAS, elapsed_time_Pivot, elapsed_time_nonPivot, elapsed_time_Solve;
+    long double elapsed_time_BLAS, elapsed_time_Pivot, elapsed_time_nonPivot, elapsed_time_Solve1, elapsed_time_Solve2;
 
     // Alloc Space for MATRICES Needed in Column Major Order
     double *matrixA = (double *)malloc(n * n * sizeof(double));
@@ -707,19 +958,19 @@ int main(int argc, char *argv[])
     // Solve PAX=PB -> LUX=BPivot -> (2) UX=Y -> (1) LY=BPivot
     // Solve (1) LY=BPivot
     start = std::chrono::high_resolution_clock::now();
-    LowerTriangularSolverRecursiveReal_0(matrixL, matrixBPivot, matrixY, n, n);
+    LowerTriangularSolverRecursiveReal_1(matrixL, matrixBPivot, matrixY, n, n);
     // Solve (2) UX=Y
-    UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
+    UpperTriangularSolverRecursiveReal_1(matrixU, matrixY, matrixX, n, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time_Solve = duration.count() * 1.e-9;
+    elapsed_time_Solve1 = duration.count() * 1.e-9;
 
     //Not intermediate Malloc Version
     //LowerTriangularSolverRecursiveReal_1even(matrixL,0,0,matrixBPivot,0,0, matrixY,0,0, n, n);
     //UpperTriangularSolverRecursiveReal_1even(matrixU,0,0,matrixY,0,0, matrixX,0,0, n, n);
 
     cout << "\nCheck Accuracy and time of my AX=B (Pivoted):";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_Pivot + elapsed_time_Solve, n, n);
+    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_Pivot + elapsed_time_Solve1, n, n);
 
     // Restore A and B Matrices After Calculation
     Write_A_over_B(matrixA_original, matrixA, n, n);
@@ -732,7 +983,8 @@ int main(int argc, char *argv[])
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for A -> NON - PIVOTED
-    LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);
+    LUdecompositionRecursive3(matrixA, matrixL, matrixU, n, n);
+    //doolittleLUDecomposition(matrixA, matrixL, matrixU, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_nonPivot = duration.count() * 1.e-9;
@@ -741,13 +993,17 @@ int main(int argc, char *argv[])
     // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
     // Solve (1) LY=B
     start = std::chrono::high_resolution_clock::now();
-    LowerTriangularSolverRecursiveReal_0(matrixL, matrixB, matrixY, n, n);
+    LowerTriangularSolverRecursiveReal_1(matrixL, matrixB, matrixY, n, n);
+    //LowerTriangularSolverNaiveReal(matrixL, matrixB, matrixY, n);
     // Solve (2) UX=Y
-    UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
+    UpperTriangularSolverRecursiveReal_1(matrixU, matrixY, matrixX, n, n);
+    //UpperTriangularSolverNaiveReal(matrixU, matrixY, matrixX, n);
     stop = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    elapsed_time_Solve2 = duration.count() * 1.e-9;
 
     cout << "Check Accuracy and time of my AX=B (non-Pivoted):";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_nonPivot + elapsed_time_Solve, n, n);
+    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_nonPivot + elapsed_time_Solve2, n, n);
 
     // Restore A and B Matrices After Calculation
     Write_A_over_B(matrixA_original, matrixA, n, n);
@@ -768,10 +1024,11 @@ int main(int argc, char *argv[])
 
     cout << "Pivot LU decomposition: " << (elapsed_time_Pivot) << " s.\n";
     cout << "Non-Pivot LU decomposition: " << (elapsed_time_nonPivot) << " s.\n";
-    cout << "Lower + Upper Solve: " << (elapsed_time_Solve) << " s.\n\n";
+    cout << "Pivot Lower + Upper Solve: " << (elapsed_time_Solve1) << " s.\n";
+    cout << "Non-Pivot Lower + Upper Solve: " << (elapsed_time_Solve2) << " s.\n\n";
 
-    cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_Pivot + elapsed_time_Solve) / elapsed_time_BLAS << "x.\n\n";
-    cout << "Solution Calculation Speedup from BLAS to my_nonPivot: " << (elapsed_time_nonPivot + elapsed_time_Solve) / elapsed_time_BLAS << "x.\n\n";
+    cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_Pivot + elapsed_time_Solve1) / elapsed_time_BLAS << "x.\n\n";
+    cout << "Solution Calculation Speedup from BLAS to my_nonPivot: " << (elapsed_time_nonPivot + elapsed_time_Solve2) / elapsed_time_BLAS << "x.\n\n";
 
     return 0;
 }
