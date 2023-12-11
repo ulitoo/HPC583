@@ -615,6 +615,117 @@ void LowerTriangularSolverRecursiveReal_1(double *matrixL, double *matrixB, doub
     }
 }
 
+void UpperTriangularSolverRecursiveReal_3(double *matrixU, double *matrixB, double *matrixX, int n, int p)
+{
+    // This is a removing the odd case
+    // Padding Experiment
+    // Simplify with only sqare matrices n=p
+    
+    if (n%2==1) //odd
+    {
+        double *matrixX2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        double *matrixB2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        double *matrixU2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        //PrintColMatrix(matrixB2,n+1,n+1);
+        //PrintColMatrix(matrixB,n,n);
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                matrixB2[i+j*(n+1)]=matrixB[i+j*n];
+                matrixX2[i+j*(n+1)]=matrixX[i+j*n];
+                matrixU2[i+j*(n+1)]=matrixU[i+j*n];
+            }
+        }
+        /*for (int i = 0; i < n+1; i++)
+        {
+            matrixB2[i+(n+1)*(n+1)]=0.0;
+            matrixB2[n+1+i*(n+1)]=0.0;
+            matrixX2[i+(n+1)*(n+1)]=0.0;
+            matrixX2[n+1+i*(n+1)]=0.0;
+            matrixU2[i+(n+1)*(n+1)]=0.0;
+            matrixU2[n+1+i*(n+1)]=0.0;
+        }*/
+        //PrintColMatrix(matrixB2,n+1,n+1);
+        UpperTriangularSolverRecursiveReal_0(matrixU2, matrixB2, matrixX2, n + 1, n + 1);
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                matrixX[i+j*(n)]=matrixX2[i+j*(n+1)];
+            }
+        }
+        free(matrixU2);
+        free(matrixB2);
+        free(matrixX2);
+    }
+    else
+    {
+    UpperTriangularSolverRecursiveReal_0(matrixU, matrixB, matrixX, n,n);
+    }
+}
+void LowerTriangularSolverRecursiveReal_3(double *matrixL, double *matrixB, double *matrixX, int n, int p)
+{
+    // This is a removing the odd case
+    // Padding Experiment
+    // Simplify with only sqare matrices n=p
+    
+    if (n%2==1) //odd
+    {
+                LowerTriangularSolverRecursiveReal_0(matrixL, matrixB, matrixX, n,n);
+    
+        PrintColMatrix(matrixX,n,n);
+                MakeZeroes(matrixX,n,n);
+        double *matrixX2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        double *matrixB2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        double *matrixL2 = (double *)malloc((n+1) * (n+1) * sizeof(double));
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                matrixB2[i+j*(n+1)]=matrixB[i+j*n];
+                matrixX2[i+j*(n+1)]=matrixX[i+j*n];
+                matrixL2[i+j*(n+1)]=matrixL[i+j*n];
+            }
+        }
+        for (int i = 0; i < n+1; i++)
+        {
+            matrixB2[i+(n)*(n+1)]=matrixB[0]+i;
+            matrixB2[n+i*(n+1)]=matrixB[0]+i+1;
+            matrixX2[i+(n)*(n+1)]=matrixB[0]+i;
+            matrixX2[n+i*(n+1)]=matrixB[0]+i+i;
+            matrixL2[i+(n)*(n+1)]=matrixB[0]+i;
+            matrixL2[n+i*(n+1)]=matrixB[0]+i+i;
+        }
+        PrintColMatrix(matrixX2,n+1,n+1);
+        LowerTriangularSolverRecursiveReal_0(matrixL2, matrixB2, matrixX2, n + 1, n + 1);
+        PrintColMatrix(matrixX2,n+1,n+1);
+        
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                matrixX[i+j*(n)]=matrixX2[i+j*(n+1)];
+            }
+        }
+        PrintColMatrix(matrixX,n,n);
+
+        MakeZeroes(matrixX,n,n);
+        LowerTriangularSolverRecursiveReal_0(matrixL, matrixB, matrixX, n,n);
+    
+        PrintColMatrix(matrixX,n,n);
+
+
+        free(matrixL2);
+        free(matrixB2);
+        free(matrixX2);
+    }
+    else
+    {
+        LowerTriangularSolverRecursiveReal_0(matrixL, matrixB, matrixX, n,n);
+    }
+}
+
 void LowerTriangularSolverRecursiveReal_1even(double *BIGL, int lm, int ln, double *BIGB, int bm, int bn, double *BIGX,int xm, int xn, int n, int N)
 {
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
