@@ -1094,8 +1094,8 @@ int main(int argc, char *argv[])
 
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for A -> NON - PIVOTED
-    LUdecompositionRecursive3(matrixA, matrixL, matrixU, n, n);
-    //doolittleLUDecomposition(matrixA, matrixL, matrixU, n);
+    //LUdecompositionRecursive3(matrixA, matrixL, matrixU, n, n);
+    doolittleLUDecomposition(matrixA, matrixL, matrixU, n, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_nonPivot = duration.count() * 1.e-9;
