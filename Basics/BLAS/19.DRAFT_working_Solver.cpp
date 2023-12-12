@@ -882,25 +882,26 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
     }
 }
 
-void doolittleLUDecomposition(double *matrixA, double *matrixL, double *matrixU, int size, int N) {
+void doolittleLUDecomposition(double *matrixA, double *matrixL, double *matrixU, int size, int N) 
+{
     int offset=N-size;
-    for (int i = 0+offset; i < size+offset; i++) {
+    for (int i = offset; i < N; i++) {
         // Upper Triangular Matrix (U)
-        for (int k = i; k < size+offset; k++) {
+        for (int k = i; k < N; k++) {
             double sum = 0.0;
-            for (int j = 0+offset; j < i; j++) {
+            for (int j = offset; j < i; j++) {
                 sum += matrixL[j * N + i] * matrixU[j + N * k];
             }
             matrixU[i + N * k] = matrixA[i + N * k] - sum;
         }
 
         // Lower Triangular Matrix (L)
-        for (int k = i; k < size+offset; k++) {
+        for (int k = i; k < N; k++) {
             if (i == k) {
                 matrixL[i * N + i] = 1.0; // Diagonal elements of L are set to 1
             } else {
                 double sum = 0.0;
-                for (int j = 0+offset; j < i; j++) {
+                for (int j = offset; j < i; j++) {
                     sum += matrixL[k + N * j] * matrixU[j + N * i];
                 }
                 matrixL[k + N * i] = (matrixA[k + N * i] - sum) / matrixU[i * N + i];
@@ -908,6 +909,34 @@ void doolittleLUDecomposition(double *matrixA, double *matrixL, double *matrixU,
         }
     }
 }
+void doolittleLUDecomposition2(double *matrixA, double *matrixL, double *matrixU, int size, int N) 
+{
+    int offset=N-size;
+    for (int i = offset; i < N; i++)
+    {
+        // Upper Triangular Matrix (U)
+        for (int k = i; k < N; k++)
+        {
+            double sum = 0.0;
+            double sum1 = 0.0;
+            for (int j = offset; j < i; j++)
+            {
+                sum += matrixL[j * N + i] * matrixU[j + N * k];
+                sum1 += matrixL[k + N * j] * matrixU[j + N * i];
+            }
+            matrixU[i + N * k] = matrixA[i + N * k] - sum;
+            if (i == k)
+            {
+                matrixL[i * N + i] = 1.0; // Diagonal elements of L are set to 1
+            }
+            else
+            {
+                matrixL[k + N * i] = (matrixA[k + N * i] - sum1) / matrixU[i * N + i];
+            }
+        }
+    }
+}
+
 void LUdecompositionRecursive3(double *matrix, double *Lmatrix, double *Umatrix, int N, int n)
 {
     // Assume square Matrix for simplicity
@@ -1095,7 +1124,7 @@ int main(int argc, char *argv[])
     start = std::chrono::high_resolution_clock::now();
     // Recursive Implementation of LU decomposition for A -> NON - PIVOTED
     //LUdecompositionRecursive3(matrixA, matrixL, matrixU, n, n);
-    doolittleLUDecomposition(matrixA, matrixL, matrixU, n, n);
+    doolittleLUDecomposition2(matrixA, matrixL, matrixU, n, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_nonPivot = duration.count() * 1.e-9;
