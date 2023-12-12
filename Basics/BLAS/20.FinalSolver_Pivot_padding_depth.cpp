@@ -19,6 +19,8 @@ using namespace std;
 //      -With NO Pivot
 //      -LAPACK BLAS
 //  5. OPTIMIZED PIVOT CODE LUdecompositionRecursive4Pivot
+//  6. Add Depth parameter to stop recursion at some point
+//  7. Add ZERO Padding in case of odd matrices 
 
 int depth_limit = 1;
 
