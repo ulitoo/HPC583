@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
         std::cout<<"Process 1 Received Message: "<< message<<std::endl;
     }
     
-    //cout << "Hello world from process " << rank << " of " << size << " on " << processor_name << endl;
+    cout << "Hello world from process " << rank << " of " << size << " on " << processor_name << endl;
     MPI_Finalize();
     return 0;
 }
