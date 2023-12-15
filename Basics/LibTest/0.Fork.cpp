@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+// Working in WSL AND COMPILING there
+
 int main()
 {
     int status;
