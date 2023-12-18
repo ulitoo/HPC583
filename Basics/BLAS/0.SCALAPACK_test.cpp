@@ -3,8 +3,10 @@
 #include <mpi.h>
 #include <cblas.h>
 #include <stdio.h>
+#include <scalapack.h>
 
 #include <pblas.h>
+#include <Bdef.h>
 #include <PBtools.h>
 #include <PBblacs.h>
 #include <PBpblas.h>
@@ -59,7 +61,7 @@ int main(int argc, char **argv)
     int uno = 1 ;
     double beta = 0.0;
 
-    pdgemm(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, &(descA), B_local, &uno, &uno, &descB, &beta, C_local, &uno, &uno, &descC);
+    //pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, &(descA), B_local, &uno, &uno, &descB, &beta, C_local, &uno, &uno, &descC);
 
     // Clean up
     delete[] A_local;

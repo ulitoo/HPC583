@@ -1,8 +1,13 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include <scalapack.h>
+//#include <scalapack.h>
 #include <mpi.h>
+#include <pblas.h>
+#include <PBtools.h>
+#include <PBblacs.h>
+#include <PBpblas.h>
+#include <PBblas.h>
 
 extern "C" {
     // Function to initialize BLACS context
