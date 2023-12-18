@@ -4,7 +4,6 @@
 #include <cblas.h>
 #include <stdio.h>
 #include <scalapack.h>
-
 #include <pblas.h>
 #include <Bdef.h>
 #include <PBtools.h>
