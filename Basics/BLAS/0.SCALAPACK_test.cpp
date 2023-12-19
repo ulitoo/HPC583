@@ -11,6 +11,7 @@
 #include <PBpblas.h>
 #include <PBblas.h>
 
+using namespace std;
 
 int main(int argc, char **argv)
 {
@@ -21,6 +22,9 @@ int main(int argc, char **argv)
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    cout << "Rank:" << rank <<"\n";
+    cout << "Size:" << size <<"\n";
 
     // Set up the grid for Scalapack
     int context, nprow, npcol, myrow, mycol;
@@ -60,7 +64,7 @@ int main(int argc, char **argv)
     int uno = 1 ;
     double beta = 0.0;
 
-    //pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, &(descA), B_local, &uno, &uno, &descB, &beta, C_local, &uno, &uno, &descC);
+    pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, &(descA), B_local, &uno, &uno, &descB, &beta, C_local, &uno, &uno, &descC);
 
     // Clean up
     delete[] A_local;
