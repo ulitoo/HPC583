@@ -6,6 +6,7 @@ int main(int argc, char *argv[])
 {
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int size, rank, len, tag;
+    tag=0;
     MPI_Status status;
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
