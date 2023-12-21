@@ -1,10 +1,11 @@
-
-// Include the Scalapack headers
+#include <iostream>
 #include <mpi.h>
+#include <scalapack.h>
+#include <pblas.h>
 #include <cblas.h>
 #include <stdio.h>
 #include <scalapack.h>
-#include <pblas.h>
+//#include <pblas.h>
 #include <Bdef.h>
 #include <PBtools.h>
 #include <PBblacs.h>
@@ -13,8 +14,7 @@
 
 using namespace std;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     // Initialize MPI
     MPI_Init(&argc, &argv);
 
@@ -23,33 +23,40 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    cout << "Rank:" << rank <<"\n";
-    cout << "Size:" << size <<"\n\n";
+    cout << "Rank:" << rank << "\n";
+    cout << "Size:" << size << "\n";
 
     // Set up the grid for Scalapack
     int context, nprow, npcol, myrow, mycol;
-    char tmp[10] = "Row-major";
-    Cblacs_pinfo(&rank, &rank);
+    char tmp[10] = "Col-major";
+    Cblacs_pinfo(&rank, &size);
     Cblacs_get(-1, 0, &context);
+    cout << "context-a:" << context << "\n";
     Cblacs_gridinit(&context, tmp, 1, size);
+    cout << "context-b:" << context << "\n";
     Cblacs_gridinfo(context, &nprow, &npcol, &myrow, &mycol);
 
+    //cout << "nprow:" << nprow << "\n";
+    //cout << "npcol:" << npcol << "\n";
+
+    cout << "context-c:" << context << "\n";
+    
     // Define the matrix sizes and block sizes
     int m = 4;
     int n = 4;
     int k = 4;
     int mb = 2;
     int nb = 2;
-    int descA = m*mb;
-    int descB = k*nb;
-    int descC = m*nb;
+    int descA[9] = {1, 0, m, k, mb, nb, 0, 0, context};
+    int descB[9] = {1, 0, k, n, mb, nb, 0, 0, context};
+    int descC[9] = {1, 0, m, n, mb, nb, 0, 0, context};
 
     // Allocate memory for the local matrices
     double *A_local = new double[m * mb];
     double *B_local = new double[k * nb];
     double *C_local = new double[m * nb];
 
-    // Initialize the local matrices (for simplicity, assuming a square matrix)
+    // Initialize the local matrices
     for (int i = 0; i < m * mb; ++i)
         A_local[i] = 1.0;
     for (int i = 0; i < k * nb; ++i)
@@ -61,10 +68,10 @@ int main(int argc, char **argv)
     char transa = 'N';
     char transb = 'N';
     double alpha = 1.0;
-    int uno = 1 ;
     double beta = 0.0;
+    int uno = 1;
 
-    pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, &(descA), B_local, &uno, &uno, &descB, &beta, C_local, &uno, &uno, &descC);
+    //pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
 
     // Clean up
     delete[] A_local;
