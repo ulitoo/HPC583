@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-// Working in WSL AND COMPILING there, oido cocina
+// Working in WSL AND COMPILING
 
 int main()
 {
