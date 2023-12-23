@@ -1,16 +1,16 @@
-#include <iostream>
 #include <mpi.h>
-#include <scalapack.h>
 #include <pblas.h>
-#include <cblas.h>
 #include <stdio.h>
 #include <scalapack.h>
+
+//#include <iostream>
+//#include <cblas.h>
 //#include <pblas.h>
-#include <Bdef.h>
-#include <PBtools.h>
-#include <PBblacs.h>
-#include <PBpblas.h>
-#include <PBblas.h>
+//#include <Bdef.h>
+//#include <PBtools.h>
+//#include <PBblacs.h>
+//#include <PBpblas.h>
+//#include <PBblas.h>
 
 using namespace std;
 
@@ -47,7 +47,10 @@ int main(int argc, char **argv) {
     int k = 4;
     int mb = 2;
     int nb = 2;
-    int descA[9] = {1, 0, m, k, mb, nb, 0, 0, context};
+    //int descA[9] = {1, 0, m, k, mb, nb, 0, 0, context};
+    //int descA[9] = {1, 1, m, k, mb, nb, 1, 1, context};
+
+    int sdescA2[9] = {1, 0, m, k, mb, nb, 0, 0, context};
     int descB[9] = {1, 0, k, n, mb, nb, 0, 0, context};
     int descC[9] = {1, 0, m, n, mb, nb, 0, 0, context};
 
@@ -71,7 +74,7 @@ int main(int argc, char **argv) {
     double beta = 0.0;
     int uno = 1;
 
-    //pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
+    pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, sdescA2, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
 
     // Clean up
     delete[] A_local;
