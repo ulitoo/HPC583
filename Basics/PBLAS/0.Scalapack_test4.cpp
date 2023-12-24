@@ -1,9 +1,13 @@
 #include <mpi.h>
-#include <pblas.h>
 #include <stdio.h>
-#include <scalapack.h>
+#include <iostream>
+#include "scalapack.h"
 
-//#include <iostream>
+//#include "pblas.h"
+//#include "PBpblas.h"
+//#include "PBblas.h"
+//#include "PBblacs.h"
+//#include <scalapack.h>
 //#include <cblas.h>
 //#include <pblas.h>
 //#include <Bdef.h>
@@ -11,6 +15,11 @@
 //#include <PBblacs.h>
 //#include <PBpblas.h>
 //#include <PBblas.h>
+
+/*
+extern "C" void pdgemm_(char *transa, char *transb, int *M, int *N, int *K, double *alpha, double *A, int *ia, int *ja, int *desca, double *B,
+            int *ib, int *jb, int *descb, double *beta, double *C, int *ic, int *jc, int *descc);
+*/
 
 using namespace std;
 
