@@ -4,7 +4,8 @@
 #include "scalapack.h"
 #include "pblas.h"
 #include "PBblacs.h"
-//#include "redist.h"
+
+#include "redist.h"
 
 using namespace std;
 
@@ -37,9 +38,11 @@ void PrintColMatrix(double *matrix, int m, int n)
 int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
 
-    int iam, nprocs, ictxt, nprow, npcol, myrow, mycol, nrows, ncols;
-    int N = 1000; // Global matrix dimensions
-    int NB = 128; // Block size
+    int info, iam, nprocs, ictxt, nprow, npcol, myrow, mycol, localrows, localcols;
+    int N = 8; // Global matrix dimensions
+    int NB = 2; // Block size
+    int zero = 0;
+    int uno = 1;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &iam);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -53,26 +56,48 @@ int main(int argc, char* argv[]) {
     npcol = nprocs / nprow;
 
     // Initialize the process grid
-    Cblacs_gridinit(&ictxt, "Row-major", nprow, npcol);
-    Cblacs_pcoord(ictxt, iam, &myrow, &mycol);
+    char tmp[10]="Col-major";
+    Cblacs_gridinit(&ictxt, tmp, nprow, npcol);
+    //Cblacs_pcoord(ictxt, iam, &myrow, &mycol);
+    Cblacs_gridinfo(ictxt, &nprow, &npcol, &myrow, &mycol);
 
     // Determine local matrix dimensions
-    nrows = numroc_(&N, &NB, &myrow, &CBLACS_ZERO, &nprow);
-    ncols = numroc_(&N, &NB, &mycol, &CBLACS_ZERO, &npcol);
+    localrows = numroc_(&N, &NB, &myrow, &zero, &nprow);
+    localcols = numroc_(&N, &NB, &mycol, &zero, &npcol);
 
     // Allocate local matrix
-    double* A_local = new double[nrows * ncols];
+    double* A_local = new double[localrows * localcols];
+    
+    // Initialize the global matrix on the root process
+    if (myrow == 0 && mycol == 0)
+    {
+        double* A_global = new double[N * N];
 
+        // Initialize your global matrix A here
+        // Example: A = identity matrix
+        for (int i = 0; i < N; ++i)
+        {
+            for (int j = 0; j < N; ++j)
+            {
+                A_global[i + N * j] = (i == j) ? 1.0 : 0.0;
+            }
+        }
+    
+        PrintColMatrix(A_global,N,N);
+    }
     // Global matrix descriptor
-    int descA[9];
-    descinit_(descA, &N, &N, &NB, &NB, &CBLACS_ZERO, &CBLACS_ZERO, &ictxt, &N, &info);
+    //int descA[9];
+    MDESC descA;
+    descinit_(descA, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &N, &info);
 
     // Local matrix descriptor
-    int descA_local[9];
-    descinit_(descA_local, &N, &N, &NB, &NB, &CBLACS_ZERO, &CBLACS_ZERO, &ictxt, &nrows, &info);
+    MDESC descA_local;
+    //int descA_local[9];
+    //descinit_(descA_local, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &localrows, &info);
 
     // Distribute the global matrix
-    pdgemr2d_(&N, &N, A_global, &CBLACS_ONE, &CBLACS_ONE, descA, A_local, &nrows, &CBLACS_ONE, &CBLACS_ONE, descA_local, &ictxt);
+
+    //Cpdgemr2d(N, N, A_global, 1, 1, &descA, A_local, 1, 1, &descA_local, ictxt);
 
     // Perform computations on the local matrix using Scalapack functions
 
