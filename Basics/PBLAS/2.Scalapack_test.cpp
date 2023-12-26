@@ -3,26 +3,7 @@
 #include <iostream>
 #include "scalapack.h"
 
-//#include "pblas.h"
-//#include "PBpblas.h"
-//#include "PBblas.h"
-//#include "PBblacs.h"
-//#include <scalapack.h>
-//#include <cblas.h>
-//#include <pblas.h>
-//#include <Bdef.h>
-//#include <PBtools.h>
-//#include <PBblacs.h>
-//#include <PBpblas.h>
-//#include <PBblas.h>
-
-/*
-extern "C" void pdgemm_(char *transa, char *transb, int *M, int *N, int *K, double *alpha, double *A, int *ia, int *ja, int *desca, double *B,
-            int *ib, int *jb, int *descb, double *beta, double *C, int *ic, int *jc, int *descc);
-*/
-
 using namespace std;
-
 
 void PrintColMatrix(double *matrix, int m, int n)
 {
@@ -46,7 +27,13 @@ void PrintColMatrix(double *matrix, int m, int n)
 
 int main(int argc, char **argv) {
     // Initialize MPI
+
+    //cout << "FUERA DE MPI. 1\n";
+
     MPI_Init(&argc, &argv);
+
+
+    //cout << "DENTRO DE MPI. 2\n";
 
     // Get the rank and size of the MPI communicator
     int rank, size;
@@ -71,40 +58,6 @@ int main(int argc, char **argv) {
     int mb = 2;
     int nb = 2;
 
-
-    //    descinit_();
-    //    int descA[9] = {1,context,m,n,mb,nb,0,0,k}
-    //{1, 0, m, k, mb, nb, 0, 0, context};
-    
-    /*
-
- *  NOTATION        STORED IN      EXPLANATION
- *  --------------- -------------- --------------------------------------
- *  DTYPE_A(global) DESCA( DTYPE_ )The descriptor type.  In this case,
- *                                 DTYPE_A = 1.
- *  CTXT_A (global) DESCA( CTXT_ ) The BLACS context handle, indicating
- *                                 the BLACS process grid A is distribu-
- *                                 ted over. The context itself is glo-
- *                                 bal, but the handle (the integer
- *                                 value) may vary.
- *  M_A    (global) DESCA( M_ )    The number of rows in the global
- *                                 array A.
- *  N_A    (global) DESCA( N_ )    The number of columns in the global
- *                                 array A.
- *  MB_A   (global) DESCA( MB_ )   The blocking factor used to distribute
- *                                 the rows of the array.
- *  NB_A   (global) DESCA( NB_ )   The blocking factor used to distribute
- *                                 the columns of the array.
- *  RSRC_A (global) DESCA( RSRC_ ) The process row over which the first
- *                                 row of the array A is distributed.
- *  CSRC_A (global) DESCA( CSRC_ ) The process column over which the
- *                                 first column of the array A is
- *                                 distributed.
- *  LLD_A  (local)  DESCA( LLD_ )  The leading dimension of the local
- *                                 array.  LLD_A >= MAX(1,LOCr(M_A)).
-
-    */
-
     int descA[9] = {1,context,m,k,mb,nb,0,0,m};
     int descB[9] = {1,context,k,n,mb,nb,0,0,k};
     int descC[9] = {1,context,m,n,mb,nb,0,0,m};
@@ -122,7 +75,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < m * nb; ++i)
         C_local[i] = 0.0;
 
-    //PrintColMatrix(A_local,m,mb);
 
     // Perform the matrix multiplication using pdgemm
     char transa = 'N';
@@ -132,7 +84,6 @@ int main(int argc, char **argv) {
     int uno = 1;
 
     pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
-
 
     PrintColMatrix(C_local,m,nb);
 
@@ -144,6 +95,7 @@ int main(int argc, char **argv) {
     // Finalize MPI
     MPI_Finalize();
 
+    //cout << "FUERA DE MPI. 3\n";
     
     return 0;
 }

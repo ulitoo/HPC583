@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../scalapack-2.2.0"
 		}
 	],
 	"settings": {

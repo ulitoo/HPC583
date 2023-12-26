@@ -27,6 +27,9 @@ extern "C"
 	void pzgesvd_(char *jobu, char *jobvt, int *m, int *n, complex_d *a, int *ia, int *ja, int *desca, double *s, complex_d *u, int *iu, int *ju, int *descu, complex_d *vt, int *ivt, int *jvt, int *descvt, complex_d *work, int *lwork, double *rwork, int *info);
 	void pdgemm_(char *jobu, char *jobvt, int *, int *, int *, double *, double *, int *, int *, int *, double *, int *, int *, int *, double *, double *, int *, int *, int *);
 	void pdgeadd_(char TRANS, int *M, int *N, double *ALPHA, double *A, int *IA, int *JA, int *DESCA, double *BETA, double *C, int *IC, int *JC, int *DESCC);
+	void PDGEMM(char TRANSA, char TRANSB, int M, int N, int K, double ALPHA, double *A, int IA, int JA, int *DESCA,
+				double *B, int IB, int JB, int *DESCB, double BETA, double *C, int IC, int JC, int *DESCC);
+	void PDGESV(int N, int NRHS, double *A, int IA, int JA, int *DESCA, int *IPIV, double *B, int IB, int JB, int *DESCB, int &INFO);
 }
 
 #endif
