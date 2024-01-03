@@ -40,8 +40,8 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    cout << "Rank:" << rank << "\n";
-    cout << "Size:" << size << "\n";
+    //cout << "Rank:" << rank << "\n";
+    //cout << "Size:" << size << "\n";
 
     // Set up the grid for Scalapack
     int context, nprow, npcol, myrow, mycol;
@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
 
     pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
 
+    cout << "Rank: " << rank << "\n";
     PrintColMatrix(C_local,m,nb);
 
     // Clean up
