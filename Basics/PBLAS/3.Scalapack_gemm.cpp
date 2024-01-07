@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     // Global matrix descriptor
     //int descA[9];
     MDESC descA;
-    descinit_(descA, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &N, &info);
+    //descinit_(descA, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &N, &info);
 
     // Local matrix descriptor
     MDESC descA_local;

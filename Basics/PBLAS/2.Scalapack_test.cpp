@@ -48,8 +48,16 @@ int main(int argc, char **argv) {
     char tmp[10] = "Col-major";
     Cblacs_pinfo(&rank, &size);
     Cblacs_get(-1, 0, &context);
-    Cblacs_gridinit(&context, tmp, 1, size);
+    //Cblacs_gridinit(&context, tmp, 1, size);
+
+    // Determine the number of processes in each dimension of the grid
+    nprow = static_cast<int>(sqrt(size));
+    npcol = size / nprow;
+
+    Cblacs_gridinit(&context, tmp, nprow, npcol);
     Cblacs_gridinfo(context, &nprow, &npcol, &myrow, &mycol);
+
+    cout << "\nnprow:"<< nprow<<" npcol:" << npcol << "\n";
 
     // Define the matrix sizes and block sizes
     int m = 4;
@@ -57,6 +65,11 @@ int main(int argc, char **argv) {
     int k = 4;
     int mb = 2;
     int nb = 2;
+    int N = 4;
+    int NB = 2;
+
+    MDESC descA_1;
+    //descinit_(descA_1, &N, &N, &NB, &NB, &nprow, &npcol, &context, &N, &info);
 
     int descA[9] = {1,context,m,k,mb,nb,0,0,m};
     int descB[9] = {1,context,k,n,mb,nb,0,0,k};
