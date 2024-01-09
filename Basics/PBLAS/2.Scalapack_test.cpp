@@ -72,18 +72,33 @@ int main(int argc, char **argv) {
 
     cout << "\nIn RANK: "<< rank << " , nprow:"<< nprow<<" npcol:" << npcol << ":: Also :: localrows:"<< localrows <<" and localcols:" << localcols << "\n";
     
-    MDESC descA_1;
+    // Global matrix descriptor
+    int descA_1[9];
+    //int *descA_1;
     //descinit_(descA_1, &N, &N, &NB, &NB, &nprow, &npcol, &context, &N, &info);
+    
+    /*cout << "Info:" << info << "\n";
+    for (int j = 0; j < 9; ++j)
+    {
+        cout << "DescA_1:[" << j <<"]:"<<descA_1[j]<<"\n";
+    }
+    */
+    
+    // Local matrix descriptor
+    int descA_local[9],descB_local[9],descC_local[9];
+    descinit_(descA_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
+    descinit_(descB_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
+    descinit_(descC_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
 
-    int descA_local[9] = {1,context,m,k,mb,nb,0,0,m};
-    int descB_local[9] = {1,context,k,n,mb,nb,0,0,k};
-    int descC_local[9] = {1,context,m,n,mb,nb,0,0,m};
+    //int descA_local[9] = {1, context, m, k, mb, nb, 0, 0, m};
+    //int descB_local[9] = {1,context,k,n,mb,nb,0,0,k};
+    //int descC_local[9] = {1,context,m,n,mb,nb,0,0,m};
 
     // Allocate memory for the local matrices
     // double* A_local = new double[localrows * localcols];
-    double *A_local = new double[m * mb];
-    double *B_local = new double[k * nb];
-    double *C_local = new double[m * nb];
+    double *A_local = new double[localrows * localcols];
+    double *B_local = new double[localrows * localcols];
+    double *C_local = new double[localrows * localcols];
     
     // Initialize the global matrix on the root process
     if (myrow == 0 && mycol == 0)
@@ -106,26 +121,26 @@ int main(int argc, char **argv) {
     }    
 
     // Local matrix descriptor
-    MDESC descA_local_2;
+    //MDESC descA_local_2;
     //int descA_local_2[9];
     //descinit_(descA_local_2, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &localrows, &info);
 
     ///////////////////////////////////////////////////
 
     // Initialize the local matrices
-    for (int i = 0; i < m * mb; ++i)
+    for (int i = 0; i < localrows * localcols; ++i)
         A_local[i] = 1.0;
-    for (int i = 0; i < k * nb; ++i)
+    for (int i = 0; i < localrows * localcols; ++i)
         B_local[i] = 2.0;
-    for (int i = 0; i < m * nb; ++i)
+    for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
 
 
     // Perform the matrix multiplication using pdgemm
-    pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
 
     cout << "Rank: " << rank << " of Size:" << size << "\n";
-    PrintColMatrix(C_local,m,nb);
+    PrintColMatrix(C_local,localrows,localcols);
 
     // Deallocate memory and finalize BLACS
     // Clean up
