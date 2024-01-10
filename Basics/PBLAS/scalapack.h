@@ -5,7 +5,7 @@
 typedef std::complex<float> complex_s;
 typedef std::complex<double> complex_d;
 
-/*
+
 typedef struct
 {
 	int desctype;
@@ -18,7 +18,7 @@ typedef struct
 	int spcol;
 	int lda;
 } MDESC;
-*/
+
 
 
 extern "C"
@@ -46,7 +46,9 @@ extern "C"
 				double *B, int IB, int JB, int *DESCB, double BETA, double *C, int IC, int JC, int *DESCC);
 	void PDGESV(int N, int NRHS, double *A, int IA, int JA, int *DESCA, int *IPIV, double *B, int IB, int JB, int *DESCB, int &INFO);
 
-	//void Cpdgemr2d(int m, int n, double *ptrmyblock, int ia, int ja, MDESC *ma, double *ptrmynewblock, int ib, int jb, MDESC *mb, int globcontext);
+	//void Cpdgemr2d(int m, int n, double *ptrmyblock, int ia, int ja, int *ma, double *ptrmynewblock, int ib, int jb, int* mb, int globcontext);
+	
+	void Cpdgemr2d(int m, int n, double *ptrmyblock, int ia, int ja, MDESC *ma, double *ptrmynewblock, int ib, int jb, MDESC *mb, int globcontext);
 	//void Cblacs_pcoord(int, int, int*, int*)
 }
 
