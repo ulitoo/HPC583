@@ -122,6 +122,9 @@ int main(int argc, char **argv)
         PrintColMatrix(B_global, N, N);
     }
 
+    // Distribute the global Matrices into the different local processors with 2D block Cyclic 
+    
+
     // Initialize the local matrices
     /*
     for (int i = 0; i < localrows * localcols; ++i)
