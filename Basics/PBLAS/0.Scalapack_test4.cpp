@@ -53,8 +53,8 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    cout << "Rank:" << rank << "\n";
-    cout << "Size:" << size << "\n";
+    //cout << "Rank:" << rank << "\n";
+    //cout << "Size:" << size << "\n";
 
     // Set up the grid for Scalapack
     int context, nprow, npcol, myrow, mycol;
@@ -76,34 +76,7 @@ int main(int argc, char **argv) {
     //    int descA[9] = {1,context,m,n,mb,nb,0,0,k}
     //{1, 0, m, k, mb, nb, 0, 0, context};
     
-    /*
-
- *  NOTATION        STORED IN      EXPLANATION
- *  --------------- -------------- --------------------------------------
- *  DTYPE_A(global) DESCA( DTYPE_ )The descriptor type.  In this case,
- *                                 DTYPE_A = 1.
- *  CTXT_A (global) DESCA( CTXT_ ) The BLACS context handle, indicating
- *                                 the BLACS process grid A is distribu-
- *                                 ted over. The context itself is glo-
- *                                 bal, but the handle (the integer
- *                                 value) may vary.
- *  M_A    (global) DESCA( M_ )    The number of rows in the global
- *                                 array A.
- *  N_A    (global) DESCA( N_ )    The number of columns in the global
- *                                 array A.
- *  MB_A   (global) DESCA( MB_ )   The blocking factor used to distribute
- *                                 the rows of the array.
- *  NB_A   (global) DESCA( NB_ )   The blocking factor used to distribute
- *                                 the columns of the array.
- *  RSRC_A (global) DESCA( RSRC_ ) The process row over which the first
- *                                 row of the array A is distributed.
- *  CSRC_A (global) DESCA( CSRC_ ) The process column over which the
- *                                 first column of the array A is
- *                                 distributed.
- *  LLD_A  (local)  DESCA( LLD_ )  The leading dimension of the local
- *                                 array.  LLD_A >= MAX(1,LOCr(M_A)).
-
-    */
+ 
 
     int descA[9] = {1,context,m,k,mb,nb,0,0,m};
     int descB[9] = {1,context,k,n,mb,nb,0,0,k};
@@ -133,7 +106,7 @@ int main(int argc, char **argv) {
 
     pdgemm_(&transa, &transb, &m, &n, &k, &alpha, A_local, &uno, &uno, descA, B_local, &uno, &uno, descB, &beta, C_local, &uno, &uno, descC);
 
-
+    cout << "Rank: " << rank << "\n";
     PrintColMatrix(C_local,m,nb);
 
     // Clean up
@@ -147,3 +120,34 @@ int main(int argc, char **argv) {
     
     return 0;
 }
+
+
+
+   /*
+
+ *  NOTATION        STORED IN      EXPLANATION
+ *  --------------- -------------- --------------------------------------
+ *  DTYPE_A(global) DESCA( DTYPE_ )The descriptor type.  In this case,
+ *                                 DTYPE_A = 1.
+ *  CTXT_A (global) DESCA( CTXT_ ) The BLACS context handle, indicating
+ *                                 the BLACS process grid A is distribu-
+ *                                 ted over. The context itself is glo-
+ *                                 bal, but the handle (the integer
+ *                                 value) may vary.
+ *  M_A    (global) DESCA( M_ )    The number of rows in the global
+ *                                 array A.
+ *  N_A    (global) DESCA( N_ )    The number of columns in the global
+ *                                 array A.
+ *  MB_A   (global) DESCA( MB_ )   The blocking factor used to distribute
+ *                                 the rows of the array.
+ *  NB_A   (global) DESCA( NB_ )   The blocking factor used to distribute
+ *                                 the columns of the array.
+ *  RSRC_A (global) DESCA( RSRC_ ) The process row over which the first
+ *                                 row of the array A is distributed.
+ *  CSRC_A (global) DESCA( CSRC_ ) The process column over which the
+ *                                 first column of the array A is
+ *                                 distributed.
+ *  LLD_A  (local)  DESCA( LLD_ )  The leading dimension of the local
+ *                                 array.  LLD_A >= MAX(1,LOCr(M_A)).
+
+    */

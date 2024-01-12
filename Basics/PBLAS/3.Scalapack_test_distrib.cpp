@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     // Define the matrix sizes and block sizes
     int N = 10;
     int NB = 2;
-    
+
     // Initialize MPI
     MPI_Init(&argc, &argv);
 
@@ -85,12 +85,7 @@ int main(int argc, char **argv)
     descinit_(descB_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
     descinit_(descC_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
 
-    // int descA_local[9] = {1, context, m, k, mb, nb, 0, 0, m};
-    // int descB_local[9] = {1,context,k,n,mb,nb,0,0,k};
-    // int descC_local[9] = {1,context,m,n,mb,nb,0,0,m};
-
     // Allocate memory for the local matrices
-    // double* A_local = new double[localrows * localcols];
     double *A_local = new double[localrows * localcols];
     double *B_local = new double[localrows * localcols];
     double *C_local = new double[localrows * localcols];
@@ -99,6 +94,7 @@ int main(int argc, char **argv)
     if (myrow == 0 && mycol == 0)
     {
         double *A_global = new double[N * N];
+        double *B_global = new double[N * N];
 
         // Initialize your global matrix A here
         // Example: A = identity matrix or ( 1 2 3 ....)
@@ -107,29 +103,37 @@ int main(int argc, char **argv)
             for (int j = 0; j < N; ++j)
             {
                 // A_global[i + N * j] = (i == j) ? 1.0 : 0.0; // Identity
-                A_global[i + N * j] = i * N + j + 1; // 1 2 3 4 ...
+                // A_global[i + N * j] = i * N + j + 1; // 1 2 3 4 ...
+                A_global[i + N * j] = 1.0; // 1 1 1 ...
+                B_global[i + N * j] = 2.0; // 2 2 2 ...
             }
         }
 
+        // Global matrix descriptor
+        int descA_global[9], descB_global[9];
+        descinit_(descA_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+        descinit_(descB_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+
+        // Distribute the global matrix
+        //Cpdgemr2d(N, N, A_global, 1, 1, &descA_global, A_local, 1, 1, descA_local, context);
+
         // Print Global Matrix A
-        // PrintColMatrix(A_global,N,N);
+        PrintColMatrix(A_global, N, N);
+        PrintColMatrix(B_global, N, N);
     }
 
-    // Local matrix descriptor
-    // MDESC descA_local_2;
-    // int descA_local_2[9];
-    // descinit_(descA_local_2, &N, &N, &NB, &NB, &nprow, &npcol, &ictxt, &localrows, &info);
-
-    ///////////////////////////////////////////////////
+    // Distribute the global Matrices into the different local processors with 2D block Cyclic 
+    
 
     // Initialize the local matrices
+    /*
     for (int i = 0; i < localrows * localcols; ++i)
         A_local[i] = 1.0;
     for (int i = 0; i < localrows * localcols; ++i)
         B_local[i] = 2.0;
     for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
-
+    */
     // Perform the matrix multiplication using pdgemm
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
 
