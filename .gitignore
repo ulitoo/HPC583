@@ -6,3 +6,5 @@
 /KenMaterial
 /scalapack
 /build
+Basics/Errors/matrix_A
+Basics/Errors/matrix_B
