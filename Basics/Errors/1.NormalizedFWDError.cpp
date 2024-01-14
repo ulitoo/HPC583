@@ -1,10 +1,5 @@
 #include <cblas.h>
 #include <iostream>
-#include <complex>
-#include <vector>
-#include <cmath>
-#include <fstream>
-#include <pthread.h>
 #include <thread>
 #include <lapacke.h>
 #include <random>
@@ -12,61 +7,22 @@
 
 using namespace std;
 
-///     MAIN :: For the sake of simplicity we will Consider all square matrices n x n
+///     MAIN :: For the sake of simplicity we will Consider all square matrices n x n AND n is multiple of 2
 
 int main(int argc, char *argv[])
 {
 
-    if (argc != 3)
+    if (argc != 2)
     {
-        std::cerr << "Usage: " << argv[0] << " n (Dimension of Matrix) C (expected condition)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " n (Dimension of Matrix)" << std::endl;
         return 1;
     }
     const int n = std::atoi(argv[1]);
-    const int expectedcondition = std::atoi(argv[2]);
 
     // Create a random number generator
     std::mt19937_64 rng(std::random_device{}());
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     
-    double *matrixA = (double *)malloc(n * n * sizeof(double));
-    double *matrixB = (double *)malloc(n * n * sizeof(double));
-    
-    // Create the matrix and fill it with random values
-    while (1)
-    {
-        for (int i = 0; i < n * n; i++)
-        {
-            matrixA[i] = dist(rng);
-        }
-        if (ConditionNumber(matrixA, n, n) < (double)expectedcondition)
-        {
-            break;
-        }
-    }
-    while (1)
-    {
-        for (int i = 0; i < n * n; i++)
-        {
-            matrixB[i] = dist(rng);
-        }
-        if (ConditionNumber(matrixB, n, n) < (double)expectedcondition)
-        {
-            break;
-        }
-    }
-
-    cout << "\nMatrix A Condition Number: " << ConditionNumber(matrixA,n,n) << "\n";
-    cout << "Matrix B Condition Number: " << ConditionNumber(matrixB,n,n) << "\n\n";
-    
-    PrintColMatrix(matrixA,n,n);
-    cout << "\n";
-    PrintColMatrix(matrixB,n,n);
-    cout << "\n";
-    
-
-    ///   *******************************  FILES WRITTEN in files
-
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
@@ -74,6 +30,8 @@ int main(int argc, char *argv[])
     long double elapsed_time_BLAS, elapsed_time_Pivot, elapsed_time_nonPivot, elapsed_time_Solve;
 
     // Alloc Space for MATRICES Needed in Column Major Order
+    double *matrixA = (double *)malloc(n * n * sizeof(double));
+    double *matrixB = (double *)malloc(n * n * sizeof(double));
     double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
     double *matrixL = (double *)malloc(n * n * sizeof(double));
     double *matrixU = (double *)malloc(n * n * sizeof(double));
@@ -84,17 +42,23 @@ int main(int argc, char *argv[])
     double *matrixB_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
 
     // Other Variables
-    double AConditionNumber;
     int INFO, IPIV[n], IPIVmine[n];
+    
+    // Create the matrix and fill it with random values
+    for (int i = 0; i < n * n; i++)
+        {
+            matrixA[i] = dist(rng);
+            matrixB[i] = dist(rng);
+        }
 
+    PrintColMatrix(matrixA,n,n);
+    cout << "\n";
+    PrintColMatrix(matrixB,n,n);
+    cout << "\n";
+    
     // Backup A and B Matrices
     Write_A_over_B(matrixA, matrixA_original, n, n);
     Write_A_over_B(matrixB, matrixB_original, n, n);
-
-    // ----------------- Calculate Condition Number of Matrix A
-
-    AConditionNumber = ConditionNumber(matrixA, n, n);
-    cout << "Matrix A Condition Number: " << (AConditionNumber) << "\n";
 
     // ----------------- Start PIVOTED Algorithm HERE!
 
@@ -124,44 +88,14 @@ int main(int argc, char *argv[])
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Solve = duration.count() * 1.e-9;
 
-    cout << "\nCheck Accuracy and time of my AX=B (Pivoted):";
+    cout << "\nCheck Accuracy and time of my AX=B (My Pivoted Recursive Algorithm):";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_Pivot + elapsed_time_Solve, n, n);
 
     // Restore A and B Matrices After Calculation
     Write_A_over_B(matrixA_original, matrixA, n, n);
     Write_A_over_B(matrixB_original, matrixB, n, n);
 
-    // ----------------- Start Non-PIVOTED Algorithm HERE!
-    // Reset Result Matrices X and Y
-    MakeZeroes(matrixY, n, n);
-    MakeZeroes(matrixX, n, n);
-
-    start = std::chrono::high_resolution_clock::now();
-    // Recursive Implementation of LU decomposition for A -> NON - PIVOTED
-    LUdecompositionRecursive2(matrixA, matrixL, matrixU, n, n);
-    stop = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time_nonPivot = duration.count() * 1.e-9;
-
-    // Now Solve system of linear equations given AX=B given B is n x n
-    // Solve AX=B -> LUX=B -> (2) UX=Y -> (1) LY=B
-    // Solve (1) LY=B
-    start = std::chrono::high_resolution_clock::now();
-    LowerTriangularSolverRecursiveReal_0(matrixL, matrixB, matrixY, n, n);
-    // Solve (2) UX=Y
-    UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
-    stop = std::chrono::high_resolution_clock::now();
-
-    cout << "Check Accuracy and time of my AX=B (non-Pivoted):";
-    ErrorCalc_Display(matrixA_original, matrixB_original, matrixX, elapsed_time_nonPivot + elapsed_time_Solve, n, n);
-
-    // Restore A and B Matrices After Calculation
-    Write_A_over_B(matrixA_original, matrixA, n, n);
-    Write_A_over_B(matrixB_original, matrixB, n, n);
-
-    // ---------------- Done! Now to Show the Results and Compare with BLAS
-
-    //   Solve BLAS and compare with my implementation
+    //  ----------------- Solve BLAS and compare with my implementation HERE!
 
     start = std::chrono::high_resolution_clock::now();
     LAPACK_dgesv(&n, &n, matrixA, &n, IPIV, matrixB, &n, &INFO);
@@ -169,15 +103,10 @@ int main(int argc, char *argv[])
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_BLAS = duration.count() * 1.e-9;
 
-    cout << "Check Accuracy and time of BLAS (dgesv): ";
+    cout << "Check Accuracy and time of LAPACK (dgesv): ";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, elapsed_time_BLAS, n, n);
 
-    cout << "Pivot LU decomposition: " << (elapsed_time_Pivot) << " s.\n";
-    cout << "Non-Pivot LU decomposition: " << (elapsed_time_nonPivot) << " s.\n";
-    cout << "Lower + Upper Solve: " << (elapsed_time_Solve) << " s.\n\n";
-
     cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_Pivot + elapsed_time_Solve) / elapsed_time_BLAS << "x.\n\n";
-    cout << "Solution Calculation Speedup from BLAS to my_nonPivot: " << (elapsed_time_nonPivot + elapsed_time_Solve) / elapsed_time_BLAS << "x.\n\n";
 
     return 0;
 }

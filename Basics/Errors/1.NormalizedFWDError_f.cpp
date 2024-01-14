@@ -1,15 +1,11 @@
 #include <cblas.h>
 #include <iostream>
-#include <complex>
-#include <vector>
-#include <cmath>
 #include <fstream>
-#include <pthread.h>
-#include <thread>
 #include <lapacke.h>
 using namespace std;
 
 /////////////////////////////   General Purpose  FUNCTIONS
+
 int Read_Matrix_file(double *matrix, int size, char *filename)
 {
     // Open the binary file for reading and handle error
@@ -85,13 +81,14 @@ double ConditionNumber(double *matrixA, int m, int n)
     //  The infinity-norm of a square matrix is the maximum of the absolute row sum
     //  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable
     double *matrixA_original = (double *)malloc(n * n * sizeof(double));
-    Write_A_over_B(matrixA, matrixA_original, n, n);
-    InverseMatrix(matrixA, n);
-
     double InfNormA, InfNormAinv;
-    InfNormA = InfinityNorm(matrixA, n);
-    InfNormAinv = InfinityNorm(matrixA_original, n);
 
+    Write_A_over_B(matrixA, matrixA_original, n, n);
+
+    InfNormA = InfinityNorm(matrixA, n);
+    InverseMatrix(matrixA, n);
+    InfNormAinv = InfinityNorm(matrixA, n);
+    
     // restore original Matrix
     Write_A_over_B(matrixA_original, matrixA, n, n);
     free(matrixA_original);
