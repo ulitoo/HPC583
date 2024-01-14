@@ -1,9 +1,10 @@
 * TEST 
-* get functions in a separate file
-* Consolidate Main in 1 files
-* compile both func and main file
+-* get functions in a separate file
+-* Consolidate Main in 1 files
+-* compile both func and main file
 
-* avoid file writing
+-* avoid file writing
+
 * get seed as a parameter to be consistent with different trials -> same matrix
 
 * work on the Error functions

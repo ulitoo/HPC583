@@ -20,7 +20,11 @@ int main(int argc, char *argv[])
     const int n = std::atoi(argv[1]);
 
     // Create a random number generator
-    std::mt19937_64 rng(std::random_device{}());
+    // Get a Seed from random device 
+    // std::mt19937_64 rng(std::random_device{}());
+ 
+    // Get a constant Seed - Always same random results
+    std::mt19937_64 rng(n+1);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
     
     // Timers
