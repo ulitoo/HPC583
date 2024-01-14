@@ -7,12 +7,9 @@
 #include <pthread.h>
 #include <thread>
 #include <lapacke.h>
-//#include <scalapack.h>
-
 using namespace std;
 
 /////////////////////////////   General Purpose  FUNCTIONS
-
 int Read_Matrix_file(double *matrix, int size, char *filename)
 {
     // Open the binary file for reading and handle error
