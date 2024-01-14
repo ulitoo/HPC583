@@ -5,7 +5,7 @@
 
 -* avoid file writing
 
-* get seed as a parameter to be consistent with different trials -> same matrix
+-* get seed as a parameter to be consistent with different trials -> same matrix
 
 * work on the Error functions
 * print them
