@@ -56,44 +56,6 @@ void InverseMatrix(double *matrixA, int n)
         std::cerr << "Error in LAPACKE_dgetrf: " << info << std::endl;
     }
 }
-double InfinityNorm(double *matrixA, int n)
-{
-    // Find the biggest sum of abs (rows)
-    double max = 0.0;
-    double tmp = 0.0;
-    for (int i = 0; i < n; i++)
-    {
-        tmp = 0.0;
-        for (int j = 0; j < n; j++)
-        {
-            tmp += abs(matrixA[i + (j * n)]);
-        }
-        if (tmp > max)
-        {
-            max = tmp;
-        }
-    }
-    return max;
-}
-double ConditionNumber(double *matrixA, int m, int n)
-{
-    //  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
-    //  The infinity-norm of a square matrix is the maximum of the absolute row sum
-    //  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable
-    double *matrixA_original = (double *)malloc(n * n * sizeof(double));
-    double InfNormA, InfNormAinv;
-
-    Write_A_over_B(matrixA, matrixA_original, n, n);
-
-    InfNormA = InfinityNorm(matrixA, n);
-    InverseMatrix(matrixA, n);
-    InfNormAinv = InfinityNorm(matrixA, n);
-    
-    // restore original Matrix
-    Write_A_over_B(matrixA_original, matrixA, n, n);
-    free(matrixA_original);
-    return InfNormA * InfNormAinv;
-}
 void PrintColMatrix(double *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
@@ -566,6 +528,60 @@ void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, doub
     }
 }
 
+/////////////////////////////// Error Calculating Functions
+double InfinityNorm(double *matrixA, int n)
+{
+    // Find the biggest sum of abs (rows)
+    double max = 0.0;
+    double tmp = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        tmp = 0.0;
+        for (int j = 0; j < n; j++)
+        {
+            tmp += abs(matrixA[i + (j * n)]);
+        }
+        if (tmp > max)
+        {
+            max = tmp;
+        }
+    }
+    return max;
+}
+double InfinityNormVector(double *vectorA, int n)
+{
+    // Find the biggest abs
+    double max = 0.0;
+    double tmp = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        tmp = abs(vectorA[i]); 
+        if (tmp > max)
+        {
+            max = tmp;
+        }
+    }
+    return max;
+}
+double ConditionNumber(double *matrixA, int m, int n)
+{
+    //  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
+    //  The infinity-norm of a square matrix is the maximum of the absolute row sum
+    //  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable
+    double *matrixA_original = (double *)malloc(n * n * sizeof(double));
+    double InfNormA, InfNormAinv;
+
+    Write_A_over_B(matrixA, matrixA_original, n, n);
+
+    InfNormA = InfinityNorm(matrixA, n);
+    InverseMatrix(matrixA, n);
+    InfNormAinv = InfinityNorm(matrixA, n);
+    
+    // restore original Matrix
+    Write_A_over_B(matrixA_original, matrixA, n, n);
+    free(matrixA_original);
+    return InfNormA * InfNormAinv;
+}
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
 {
     double *CalculatedB = (double *)malloc(n * p * sizeof(double));
@@ -577,4 +593,26 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
     cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
+}
+void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
+{
+    // Infinity norm of a vector is its max absolute value
+    
+    double *CalculatedB = (double *)malloc(n * p * sizeof(double));
+    MakeZeroes(CalculatedB, n, p);
+    // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
+    // Substitute by LAPACK dGEMM
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    double dist = MatrixDistance(matrixB, CalculatedB, n, p);
+    cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
+    cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
+    free(CalculatedB);
+}
+
+double machine_epsilon()
+{
+    double epsilon = 0;
+
+
+    return epsilon;
 }
