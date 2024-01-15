@@ -9,7 +9,7 @@ int MaxRow(double *matrix, int n);
 int MaxRow2(double *matrix, int N, int n);
 double MatrixDistance(double *matrixa, double *matrixb, int m, int n);
 void SwapRow_ColMajMatrix(double *matrix, int from, int towards, int m, int n);
-double machine_epsilon();
+double double_machine_epsilon();
 
 /////////////////////////////   Triangular Solver FUNCTIONS
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p);

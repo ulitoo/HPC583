@@ -153,6 +153,25 @@ void SwapRow_ColMajMatrix(double *matrix, int from, int towards, int m, int n)
         matrix[from + i] = tmpval;
     }
 }
+double double_machine_epsilon()
+{
+    double epsilon,tmp;
+    double one=1.;
+    double half=1./2.;
+    int j;
+
+    for (j=0;;j++){
+        tmp = 1.+pow(half,static_cast<double>(j)); 
+        
+        if ((tmp-one) == 0.){
+            break;
+        } 
+
+    }
+    //std::cout << "Iter: " << j-1 << " Value:" << pow(half,static_cast<double>(j-1)) << endl;
+    epsilon = pow(half,static_cast<double>(j-1));
+    return epsilon;
+}
 
 /////////////////////////////   Triangular Solver FUNCTIONS
 void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
@@ -609,10 +628,3 @@ void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, lon
     free(CalculatedB);
 }
 
-double machine_epsilon()
-{
-    double epsilon = 0;
-
-
-    return epsilon;
-}

@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 
     // Other Variables
     int INFO, IPIV[n], IPIVmine[n];
+    double epsilon = double_machine_epsilon();
     
     // Create the matrices A and B and fill it with random values
     for (int i = 0; i < n * n; i++)
@@ -98,7 +99,8 @@ int main(int argc, char *argv[])
     cout << "Check Accuracy and time of LAPACK (dgesv): ";
     ErrorCalc_Display(matrixA_original, matrixB_original, matrixB, elapsed_time_BLAS, n, n);
 
-    cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_mine) / elapsed_time_BLAS << "x.\n\n";
+    cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_mine) / elapsed_time_BLAS << "x.\n";
+    cout << "Machine epsilon for double type:" << epsilon <<"\n\n"; 
 
     return 0;
 }
