@@ -624,7 +624,7 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
-void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int m, int n)
+void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, int m, int n)
 {
     // Infinity norm of a vector is its max absolute value
     
@@ -645,7 +645,7 @@ void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, lon
     cout << "X Norm:----------------> : " << X_norm << "\n";
     cout << "Machine epsilon:----------------> : " << epsilon << "\n";
     cout << "|Residual| / (|A||X|epsilon) : FWD Error:--------> : " << fwd_error << "\n";
-    cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
+    //cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
 
