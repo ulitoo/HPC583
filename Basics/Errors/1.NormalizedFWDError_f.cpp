@@ -134,7 +134,7 @@ int MaxRow2(double *matrix, int N, int n)
     }
     return maxrow;
 }
-double MatrixDistance(double *matrixa, double *matrixb, int m, int n)
+double MatrixDistance_norm2(double *matrixa, double *matrixb, int m, int n)
 {
     double diff = 0.0;
     for (int i = 0; i < m * n; ++i)
@@ -601,6 +601,17 @@ double ConditionNumber(double *matrixA, int m, int n)
     free(matrixA_original);
     return InfNormA * InfNormAinv;
 }
+double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double *matrixResidual, int m, int n)
+{
+    double *CalculatedB = (double *)malloc(m * n * sizeof(double));
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    for (int i = 0; i < m*n; i++)
+    {
+        matrixResidual[i] = CalculatedB[i] - matrixB[i];
+    }
+    free(CalculatedB);
+    return InfinityNorm(matrixResidual,m);
+}
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
 {
     double *CalculatedB = (double *)malloc(n * p * sizeof(double));
@@ -608,22 +619,32 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
-    double dist = MatrixDistance(matrixB, CalculatedB, n, p);
+    double dist = MatrixDistance_norm2(matrixB, CalculatedB, n, p);
     cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
-void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
+void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int m, int n)
 {
     // Infinity norm of a vector is its max absolute value
     
-    double *CalculatedB = (double *)malloc(n * p * sizeof(double));
-    MakeZeroes(CalculatedB, n, p);
+    double *CalculatedB = (double *)malloc(m * n * sizeof(double));
+    double *matrixResidual = (double *)malloc(m * n * sizeof(double));
+    MakeZeroes(CalculatedB, m, n);
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
-    double dist = MatrixDistance(matrixB, CalculatedB, n, p);
-    cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, m, m, 1.0, matrixA, m, matrixX, m, 0.0, CalculatedB, m);
+    //double dist = MatrixDistance_norm2(matrixB, CalculatedB, m, n);
+    double residual_norm = residual_matrix(matrixA,matrixX,matrixB,matrixResidual,m,n);
+    double epsilon = double_machine_epsilon();
+    double A_norm = InfinityNorm(matrixA,m);
+    double X_norm = InfinityNorm(matrixX,m);
+    double fwd_error = residual_norm/(A_norm*X_norm*epsilon);
+    cout << "\nResidual Norm:----------------> : " << residual_norm << "\n";
+    cout << "A Norm:----------------> : " << A_norm << "\n";
+    cout << "X Norm:----------------> : " << X_norm << "\n";
+    cout << "Machine epsilon:----------------> : " << epsilon << "\n";
+    cout << "|Residual| / (|A||X|epsilon) : FWD Error:--------> : " << fwd_error << "\n";
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }

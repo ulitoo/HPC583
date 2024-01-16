@@ -6,8 +6,10 @@
 -* avoid file writing
 
 -* get seed as a parameter to be consistent with different trials -> same matrix
+-* machine epsilon for double is : 2.22045e-16
 
-* work on the Error functions
-* print them
+-* work on the Error functions
+
+* print them in a new File
 
 * work on PLOT 

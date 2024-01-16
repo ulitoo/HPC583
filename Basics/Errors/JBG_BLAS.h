@@ -30,5 +30,6 @@ void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, doub
 double InfinityNorm(double *matrixA, int n);
 double InfinityNormVector(double *vectorA, int n);
 double ConditionNumber(double *matrixA, int m, int n);
+double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double *matrixResidual, int m, int n);
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p);
 void ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p);
