@@ -20,12 +20,10 @@ int main(int argc, char *argv[])
     const int n = std::atoi(argv[1]);
     const int seed = std::atoi(argv[2]);
 
-    // Create a random number generator =>  Get a Seed from random device 
-    // std::mt19937_64 rng(std::random_device{}());
-     // ....or Get a constant Seed - Always same random results... 
+    // Create a random number generator =>  Get a Seed from random device
     std::mt19937_64 rng(seed);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
-    
+
     // Timers
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
@@ -46,20 +44,14 @@ int main(int argc, char *argv[])
 
     // Other Variables
     int INFO, IPIV[n], IPIVmine[n];
-    double epsilon = double_machine_epsilon();
-    
+
     // Create the matrices A and B and fill it with random values
     for (int i = 0; i < n * n; i++)
-        {
-            matrixA[i] = dist(rng);
-            matrixB[i] = dist(rng);
-        }
+    {
+        matrixA[i] = dist(rng);
+        matrixB[i] = dist(rng);
+    }
 
-    //PrintColMatrix(matrixA,n,n);
-    //cout << "\n";
-    //PrintColMatrix(matrixB,n,n);
-    //cout << "\n";
-    
     // Backup A and B Matrices
     Write_A_over_B(matrixA, matrixA_original, n, n);
     Write_A_over_B(matrixB, matrixB_original, n, n);
@@ -67,17 +59,10 @@ int main(int argc, char *argv[])
     // ----------------- Start PIVOTED Algorithm HERE!
 
     start = std::chrono::high_resolution_clock::now();
-    // Recursive Implementation of LU decomposition for PA -> PIVOTED
     LUdecompositionRecursive4Pivot(matrixA, matrixL, matrixU, IPIVmine, n, n);
-    // Create Permutation Matrix based on the swap vector (indices of swapped rows in algo)
     ipiv_to_P(IPIVmine, n, matrixP);
-    // Now use BPivot instead of B for Solving LUX=PB -> PAX=PB -> PA=LU
     cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixP, n, matrixB, n, 0.0, matrixBPivot, n);
-    // Now Solve system of linear equations given AX=B given B is n x n
-    // Solve PAX=PB -> LUX=BPivot -> (2) UX=Y -> (1) LY=BPivot
-    // Solve (1) LY=BPivot
     LowerTriangularSolverRecursiveReal_0(matrixL, matrixBPivot, matrixY, n, n);
-    // Solve (2) UX=Y
     UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -102,7 +87,6 @@ int main(int argc, char *argv[])
     ErrorCalc_Display_v2(matrixA_original, matrixB_original, matrixB, elapsed_time_BLAS, n, n);
 
     cout << "Solution Calculation Speedup from BLAS to my_Pivot: " << (elapsed_time_mine) / elapsed_time_BLAS << "x.\n";
-    //cout << "Machine epsilon for double type:" << epsilon <<"\n\n"; 
 
     return 0;
 }
