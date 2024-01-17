@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         Write_A_over_B(matrixA, matrixA_original, n, n);
         Write_A_over_B(matrixB, matrixB_original, n, n);
 
-        if (n <= 17192)
+        if (i <= 12)
         {
             // Alloc Space for MATRICES Needed in Column Major Order
             double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
