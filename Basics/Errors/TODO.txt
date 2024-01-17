@@ -10,6 +10,6 @@
 
 -* work on the Error functions
 
-* print them in a new File
-
-* work on PLOT 
+*GET the data into a File in C++
+*Then read the file in Python
+*Use MATPLOTLIB in python
