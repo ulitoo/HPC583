@@ -11,7 +11,7 @@
                 "-O3",
                 "${file}",
                 // include a file_f.cpp file with all functions
-                //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",
+                "${fileDirname}/${fileBasenameNoExtension}_f.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lfftw3",
