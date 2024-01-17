@@ -7,7 +7,7 @@
 
 using namespace std;
 
-///     MAIN : For the sake of simplicity we will Consider all square matrices n x n AND n is multiple of 2
+///     MAIN :-> For the sake of simplicity we will Consider all square matrices n x n AND n is multiple of 2
 ///     This one will do calculations from 1 to 512 and print the results
 
 int main(int argc, char *argv[])
