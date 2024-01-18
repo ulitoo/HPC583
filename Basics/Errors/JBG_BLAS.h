@@ -32,4 +32,4 @@ double InfinityNormVector(double *vectorA, int n);
 double ConditionNumber(double *matrixA, int m, int n);
 double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double *matrixResidual, int m, int n);
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p);
-double ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, int n, int p);
+void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matrixX, double *results, int m, int n);

@@ -19,17 +19,14 @@ int main(int argc, char *argv[])
     }
     const int seed = std::atoi(argv[1]);
     int INFO;
-    int max_size = 14;
-    double x_axis[14];
-    double y_axis_me[14];
-    double y_axis_lapack[14];
-
+    int max_size = 10;
+    double *results_me = (double *)malloc( max_size * 7 * sizeof(double));
+    double *results_lapack = (double *)malloc( max_size * 7 * sizeof(double));
+            
     int n = 1;
     for (int i = 0; i < max_size; i++)
     {
         n *= 2;
-        x_axis[i] = n;
-
         cout << "Matrix Size:" << n;
 
         // Create a random number generator =>  Get a Seed from random device
@@ -57,7 +54,7 @@ int main(int argc, char *argv[])
         Write_A_over_B(matrixA, matrixA_original, n, n);
         Write_A_over_B(matrixB, matrixB_original, n, n);
 
-        if (n <= 17192)
+        if (i < 11)
         {
             // Alloc Space for MATRICES Needed in Column Major Order
             double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
@@ -66,7 +63,6 @@ int main(int argc, char *argv[])
             double *matrixP = (double *)malloc(n * n * sizeof(double)); // Permutation Matrix
             double *matrixY = (double *)malloc(n * n * sizeof(double));
             double *matrixX = (double *)malloc(n * n * sizeof(double));
-
             // Backup A and B Matrices
             Write_A_over_B(matrixA, matrixA_original, n, n);
             Write_A_over_B(matrixB, matrixB_original, n, n);
@@ -79,7 +75,8 @@ int main(int argc, char *argv[])
             UpperTriangularSolverRecursiveReal_0(matrixU, matrixY, matrixX, n, n);
 
             cout << "\nCheck Accuracy and time of my AX=B (My Pivoted Recursive Algorithm):";
-            y_axis_me[i] = ErrorCalc_Display_v2(matrixA_original, matrixB_original, matrixX, n, n);
+            results_me[7*i+6]=i;
+            ErrorCalc_Display_v2(i,matrixA_original, matrixB_original, matrixX,results_me, n, n);
 
             // Restore A and B Matrices After Calculation
             Write_A_over_B(matrixA_original, matrixA, n, n);
@@ -96,7 +93,8 @@ int main(int argc, char *argv[])
         LAPACK_dgesv(&n, &n, matrixA, &n, IPIV, matrixB, &n, &INFO);
 
         cout << "\nCheck Accuracy and time of LAPACK (dgesv): ";
-        y_axis_lapack[i] = ErrorCalc_Display_v2(matrixA_original, matrixB_original, matrixB, n, n);
+        results_lapack[7*i+6]=i;
+        ErrorCalc_Display_v2(i,matrixA_original, matrixB_original, matrixB, results_lapack, n, n);
         cout << "\n";
 
         // free memory
@@ -108,22 +106,25 @@ int main(int argc, char *argv[])
         free(IPIVmine);
     }
 
-    cout << "\n\nRESULTADO FINAL:\n";
-    cout << "X:\t";
-    for (int k = 0; k < 14; k++)
+    cout << "FINAL RESULTS:\n";
+    cout << "Mine:\n";
+    for (int k = 0; k < max_size; k++)
     {
-        cout << x_axis[k] <<",";
-    }    
-    cout << "\nY1:\t";
-    for (int k = 0; k < 14; k++)
-    {
-        cout << y_axis_lapack[k] <<",";
-    }    
-    cout << "\nY2:\t";
-    for (int k = 0; k < 14; k++)
-    {
-        cout << y_axis_me[k] <<",";
+        for (int kl = 0; kl < 7; kl++)
+        {
+            cout << results_me[k*7+kl] << ",";
+        }
+        cout << "\n";
     }
+    cout << "\nLAPACK:\t";
+    for (int k = 0; k < max_size; k++)
+    {
+        for (int kl = 0; kl < 7; kl++)
+        {
+            cout << results_lapack[k*7+kl] << ",";
+        }
+        cout << "\n";
+    }  
     cout << "\n\n";
     return 0;
 }

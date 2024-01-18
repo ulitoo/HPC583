@@ -624,9 +624,9 @@ void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long d
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
-double ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, int m, int n)
+void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matrixX, double *results, int m, int n)
 {
-    // !!! this function returns calculated fwd error
+    // !!! this function returns a vector with : [7] [Matrix size, Residual Norm,A Norm, X Norm, Machine Epsilon, Fwd Error,Elapsed Time]
     // Infinity norm of a vector is its max absolute value
     
     double *CalculatedB = (double *)malloc(m * n * sizeof(double));
@@ -646,8 +646,14 @@ double ErrorCalc_Display_v2(double *matrixA, double *matrixB, double *matrixX, i
     cout << "X Norm:----------------> : " << X_norm << "\n";
     cout << "Machine epsilon:----------------> : " << epsilon << "\n";
     cout << "|Residual| / (|A||X|epsilon) : FWD Error:--------> : " << fwd_error << "\n";
-    //cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
+    cout << "Elapsed Time:------------------------------------> : " << results[7*i+6] << " s.\n\n";
+    results[7*i+0]=m;
+    results[7*i+1]=residual_norm;
+    results[7*i+2]=A_norm;
+    results[7*i+3]=X_norm;
+    results[7*i+4]=epsilon;
+    results[7*i+5]=fwd_error;
     free(CalculatedB);
-    return fwd_error;
+
 }
 
