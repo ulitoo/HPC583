@@ -62,7 +62,7 @@ void PrintColMatrix(double *matrix, int m, int n)
     {
         for (int j = 0; j < n; j++)
         {
-            if (matrix[i + (j * m)] < 0.00000000000000000001)
+            if (abs(matrix[i + (j * m)]) < 0.00000000000000000001)
             {
                 cout << 0.0 << " ";
             }

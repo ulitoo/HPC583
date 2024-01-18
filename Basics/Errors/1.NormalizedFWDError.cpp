@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     }
     const int seed = std::atoi(argv[1]);
     int INFO;
-    int max_size = 10;
+    int max_size = 14;
     double *results_me = (double *)malloc(max_size * 7 * sizeof(double));
     double *results_lapack = (double *)malloc(max_size * 7 * sizeof(double));
 
@@ -59,8 +59,8 @@ int main(int argc, char *argv[])
         start = std::chrono::high_resolution_clock::now();
         for (int k = 0; k < n * n; k++)
         {
-            matrixA[k] = dist(rng);
-            matrixB[k] = dist(rng);
+            matrixA[k] = dist(rng) - 0.5;
+            matrixB[k] = dist(rng) - 0.5;
         }
         stop = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
         elapsed_time_mine = duration.count() * 1.e-9;
         cout << "Matrices backup time:" << elapsed_time_mine << "\n";
 
-        if (i < 10)
+        if (i < 13)
         {
             // Alloc Space for MATRICES Needed in Column Major Order
             double *matrixBPivot = (double *)malloc(n * n * sizeof(double));
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     }
 
     // Print the results
-    cout <<"\n================> FINAL RESULTS:\n";
+    cout << "\n================> FINAL RESULTS:\n";
     cout << "\nMine:\n";
     for (int k = 0; k < max_size; k++)
     {
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         }
         cout << "\n";
     }
-    
+
     // Write the Results matrices to file in binary format
     std::ofstream outfilea("Results_mine", std::ios::out | std::ios::binary);
     std::ofstream outfileb("Results_lapack", std::ios::out | std::ios::binary);
