@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <lapacke.h>
+#include <fstream>
 #include <random>
 #include "JBG_BLAS.h"
 
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
     }
     const int seed = std::atoi(argv[1]);
     int INFO;
-    int max_size = 14;
+    int max_size = 10;
     double *results_me = (double *)malloc(max_size * 7 * sizeof(double));
     double *results_lapack = (double *)malloc(max_size * 7 * sizeof(double));
 
@@ -137,8 +138,9 @@ int main(int argc, char *argv[])
         cout << "Memory Free time:" << elapsed_time_mine << "\n";
     }
 
-    cout << "FINAL RESULTS:\n";
-    cout << "Mine:\n";
+    // Print the results
+    cout <<"\n================> FINAL RESULTS:\n";
+    cout << "\nMine:\n";
     for (int k = 0; k < max_size; k++)
     {
         for (int kl = 0; kl < 7; kl++)
@@ -147,7 +149,7 @@ int main(int argc, char *argv[])
         }
         cout << "\n";
     }
-    cout << "\nLAPACK:\t";
+    cout << "\nLAPACK:\n";
     for (int k = 0; k < max_size; k++)
     {
         for (int kl = 0; kl < 7; kl++)
@@ -156,6 +158,23 @@ int main(int argc, char *argv[])
         }
         cout << "\n";
     }
-    cout << "\n\n";
+    
+    // Write the Results matrices to file in binary format
+    std::ofstream outfilea("Results_mine", std::ios::out | std::ios::binary);
+    std::ofstream outfileb("Results_lapack", std::ios::out | std::ios::binary);
+    if (outfilea.is_open() and outfileb.is_open())
+    {
+        outfilea.write(reinterpret_cast<char *>(results_me), sizeof(double) * 7 * max_size);
+        outfilea.close();
+        outfileb.write(reinterpret_cast<char *>(results_lapack), sizeof(double) * 7 * max_size);
+        outfileb.close();
+        cout << "\nFiles Written sucessfully\n\n";
+    }
+    else
+    {
+        std::cerr << "Failed to open file/s" << std::endl;
+        return 1;
+    }
+
     return 0;
 }
