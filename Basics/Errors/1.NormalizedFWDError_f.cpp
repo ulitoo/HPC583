@@ -629,13 +629,7 @@ void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matri
     // !!! this function returns a vector with : [7] [Matrix size, Residual Norm,A Norm, X Norm, Machine Epsilon, Fwd Error,Elapsed Time]
     // Infinity norm of a vector is its max absolute value
     
-    double *CalculatedB = (double *)malloc(m * n * sizeof(double));
     double *matrixResidual = (double *)malloc(m * n * sizeof(double));
-    MakeZeroes(CalculatedB, m, n);
-    // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
-    // Substitute by LAPACK dGEMM
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, m, m, 1.0, matrixA, m, matrixX, m, 0.0, CalculatedB, m);
-    //double dist = MatrixDistance_norm2(matrixB, CalculatedB, m, n);
     double residual_norm = residual_matrix(matrixA,matrixX,matrixB,matrixResidual,m,n);
     double epsilon = double_machine_epsilon();
     double A_norm = InfinityNorm(matrixA,m);
@@ -653,7 +647,7 @@ void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matri
     results[7*i+3]=X_norm;
     results[7*i+4]=epsilon;
     results[7*i+5]=fwd_error;
-    free(CalculatedB);
+    free(matrixResidual);
 
 }
 
