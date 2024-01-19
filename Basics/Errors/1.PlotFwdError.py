@@ -46,7 +46,8 @@ Residual_mine = np.array(double_matrix_mine)[0:13,1]
 Residual_lapack = np.array(double_matrix_lapack)[:,1]
 
 NormA = np.array(double_matrix_lapack)[:,2]
-NormX = np.array(double_matrix_lapack)[:,3]
+NormX_lapack = np.array(double_matrix_lapack)[:,3]
+NormX_mine = np.array(double_matrix_mine)[:,3]
 
 Fwd_Error_mine = np.array(double_matrix_mine)[0:13,5]
 Fwd_Error_lapack = np.array(double_matrix_lapack)[:,5]
@@ -106,7 +107,8 @@ axs[1, 1].set_xscale('log')
 axs[1, 1].set_yscale('log')
 
 # Create a plot for the Time row of each matrix
-axs[1, 1].plot(x_values,NormX, label='Norm X')
+axs[1, 1].plot(x_values,NormX_mine, label='Norm X mine')
+axs[1, 1].plot(x_values,NormX_lapack, label='Norm X lapack')
 axs[1, 1].plot(x_values,NormA, label='Norm A')
 
 # Add labels and legend

@@ -13,14 +13,16 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cerr << "Usage: " << argv[0] << " n for 2^n (Max Dimension of Matrices) s (seed)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " n (for 2^n Max Dimension of Matrices)  n (for n*epsilon) s (seed)" << std::endl;
         return 1;
     
     }
     const int max_size = std::atoi(argv[1]);
-    const int seed = std::atoi(argv[2]);
+    const int n_eps = std::atoi(argv[2]);
+    const double epsilon = double_machine_epsilon(); 
+    const int seed = std::atoi(argv[3]);
     int INFO;
     double *results_me = (double *)malloc(max_size * 7 * sizeof(double));
     double *results_lapack = (double *)malloc(max_size * 7 * sizeof(double));
@@ -67,19 +69,33 @@ int main(int argc, char *argv[])
             matrixB[k] = dist(rng) - 0.5;
         }
 
-        // Create a singular matrix , Row 0 and Row 1 is the same for A 
+        // Escale the Diagonal x N
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (i==j)
+                {
+                    matrixA[i+j*n] *= n;
+                }
+                    
+            }
+        }
+
+        // Create a singular matrix , Row 0 and Row 1 is the same for A
+        /*
+        int alternate = -1;
         for (int k = 0; k < n; k++)
         {
+            alternate = alternate * (-1);
             double tmp = dist(rng) - 0.5;
             matrixA[k*n] = tmp;
-            matrixA[k*n+1] = tmp;
-            
-            //tmp = dist(rng) - 0.5;
-            //matrixB[k*n] = tmp;
-            //matrixB[k*n+1] = tmp;
+            matrixA[k*n+1] = tmp + (double)alternate*(double)n_eps*epsilon;
         }
+        */
         //PrintColMatrix(matrixA,n,n);
         //PrintColMatrix(matrixB,n,n);
+        //cout << "Epsilon times k:" << (double)n_eps*epsilon<<"\n";
         
         stop = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
