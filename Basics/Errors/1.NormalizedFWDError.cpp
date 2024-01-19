@@ -13,14 +13,15 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cerr << "Usage: " << argv[0] << " n (Dimension of Matrix) s (seed)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " n for 2^n (Max Dimension of Matrices) s (seed)" << std::endl;
         return 1;
+    
     }
-    const int seed = std::atoi(argv[1]);
+    const int max_size = std::atoi(argv[1]);
+    const int seed = std::atoi(argv[2]);
     int INFO;
-    int max_size = 14;
     double *results_me = (double *)malloc(max_size * 7 * sizeof(double));
     double *results_lapack = (double *)malloc(max_size * 7 * sizeof(double));
 
@@ -42,6 +43,8 @@ int main(int argc, char *argv[])
 
         // Alloc Space for MATRICES Needed in Column Major Order
         start = std::chrono::high_resolution_clock::now();
+        //double *vectorA = (double *)malloc(n * sizeof(double));
+        //double *vectorB = (double *)malloc(n * sizeof(double));
         double *matrixA = (double *)malloc(n * n * sizeof(double));
         double *matrixB = (double *)malloc(n * n * sizeof(double));
         double *matrixA_original = (double *)malloc(n * n * sizeof(double)); // in case they get overwritten
@@ -57,11 +60,27 @@ int main(int argc, char *argv[])
 
         // Create the matrices A and B and fill it with random values
         start = std::chrono::high_resolution_clock::now();
+        
         for (int k = 0; k < n * n; k++)
         {
             matrixA[k] = dist(rng) - 0.5;
             matrixB[k] = dist(rng) - 0.5;
         }
+
+        // Create a singular matrix , Row 0 and Row 1 is the same for A 
+        for (int k = 0; k < n; k++)
+        {
+            double tmp = dist(rng) - 0.5;
+            matrixA[k*n] = tmp;
+            matrixA[k*n+1] = tmp;
+            
+            //tmp = dist(rng) - 0.5;
+            //matrixB[k*n] = tmp;
+            //matrixB[k*n+1] = tmp;
+        }
+        //PrintColMatrix(matrixA,n,n);
+        //PrintColMatrix(matrixB,n,n);
+        
         stop = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
         elapsed_time_mine = duration.count() * 1.e-9;
@@ -126,6 +145,8 @@ int main(int argc, char *argv[])
 
         // free memory
         start = std::chrono::high_resolution_clock::now();
+        //free(vectorA);
+        //free(vectorB);
         free(matrixA);
         free(matrixB);
         free(matrixA_original);

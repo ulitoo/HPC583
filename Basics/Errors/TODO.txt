@@ -1,4 +1,4 @@
-* TEST 
+* -> TEST 
 -* get functions in a separate file
 -* Consolidate Main in 1 files
 -* compile both func and main file
@@ -10,6 +10,13 @@
 
 -* work on the Error functions
 
-*GET the data into a File in C++
-*Then read the file in Python
-*Use MATPLOTLIB in python
+-*GET the data into a File in C++
+-*Then read the file in Python
+-*Use MATPLOTLIB in python
+
+* -> BREAK MATRICES to test Stability
+
+* Singular
+* Get a matrix row and replace another row with the same +/- 3epsilon
+* Scale the diagonal
+* Hole in diagonal
