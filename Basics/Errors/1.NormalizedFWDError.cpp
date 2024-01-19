@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 4)
     {
-        std::cerr << "Usage: " << argv[0] << " n (for 2^n Max Dimension of Matrices)  n (for n*epsilon) s (seed)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " n (for 2^n Max Dimension of Matrices)  n (for n*epsilon or for holes) s (seed)" << std::endl;
         return 1;
     
     }
@@ -68,21 +68,43 @@ int main(int argc, char *argv[])
             matrixA[k] = dist(rng) - 0.5;
             matrixB[k] = dist(rng) - 0.5;
         }
+        
+        stop = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+        elapsed_time_mine = duration.count() * 1.e-9;
+        cout << "Matrix writing time:" << elapsed_time_mine << "\n";
 
-        // Escale the Diagonal x N
+        // ------------- Poke holes on the diagonal
+        /*
+        for (int k = 0; k < n; k++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                //if ((k==j) and (k==(n/2)))    // one in the middle 
+                if ((k==j) and (k%n_eps == 0))    // one every k elements 
+                {
+                    matrixA[k+j*n] = 0;
+                }
+                    
+            }
+        }
+        */
+        // -------------- Escale the Diagonal x N
+        /*
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
                 if (i==j)
                 {
-                    matrixA[i+j*n] *= n;
+                    matrixA[i+j*n] *= n*n;
                 }
                     
             }
         }
-
-        // Create a singular matrix , Row 0 and Row 1 is the same for A
+        */
+        // ------------- Create a singular matrix , Row 0 and Row 1 is the same for A
+        // ------------- Perturbate with n times epsilon 
         /*
         int alternate = -1;
         for (int k = 0; k < n; k++)
@@ -97,11 +119,6 @@ int main(int argc, char *argv[])
         //PrintColMatrix(matrixB,n,n);
         //cout << "Epsilon times k:" << (double)n_eps*epsilon<<"\n";
         
-        stop = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-        elapsed_time_mine = duration.count() * 1.e-9;
-        cout << "Matrix writing time:" << elapsed_time_mine << "\n";
-
         // Backup A and B Matrices
         start = std::chrono::high_resolution_clock::now();
         Write_A_over_B(matrixA, matrixA_original, n, n);
