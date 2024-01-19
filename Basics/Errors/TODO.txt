@@ -16,7 +16,7 @@
 
 * -> BREAK MATRICES to test Stability
 
-* Singular
-* Get a matrix row and replace another row with the same +/- 3epsilon
-* Scale the diagonal
-* Hole in diagonal
+-* Singular
+-* Get a matrix row and replace another row with the same +/- 3epsilon
+-* Scale the diagonal
+-* Hole in diagonal
