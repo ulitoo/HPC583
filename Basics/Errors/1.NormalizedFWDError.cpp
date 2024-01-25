@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         cout << "Matrix writing time:" << elapsed_time_mine << "\n";
 
         // ------------- Poke holes on the diagonal
-        /*
+        
         for (int k = 0; k < n; k++)
         {
             for (int j = 0; j < n; j++)
@@ -83,26 +83,26 @@ int main(int argc, char *argv[])
                 //if ((k==j) and (k==(n/2)))    // one in the middle 
                 if ((k==j) and (k%n_eps == 0))    // one every k elements 
                 {
-                    matrixA[k+j*n] = 0;
+                    //matrixA[k+j*n] = 0;
                 }
                     
             }
         }
-        */
+        
         // -------------- Escale the Diagonal x N
-        /*
+        
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
                 if (i==j)
                 {
-                    matrixA[i+j*n] *= n*n;
+                    //matrixA[i+j*n] *= n;
                 }
                     
             }
         }
-        */
+        
         // ------------- Create a singular matrix , Row 0 and Row 1 is the same for A
         // ------------- Perturbate with n times epsilon 
         /*
