@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cusolverDn.h>
-#define N 8192
+#define N 32
 #define BILLION 1000000000L;
 using namespace std;
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     cudaStatus = cudaMemcpy(B1, d_B, N * sizeof(float),
                             cudaMemcpyDeviceToHost); // copy d_B - >B1
     printf(" solution : ");
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < N; i++)
         printf("%g, ", B1[i]);
     printf(" ... "); // print first components of the solution
     printf("\n");
