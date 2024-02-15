@@ -96,11 +96,13 @@ int main(int argc, char *argv[])
         // use the LU factorization to solve the system d_A * X = d_B;
         // the solution overwrites d_B
         cusolverStatus = cusolverDnDgetrs(handle, CUBLAS_OP_N, n, n, d_A, n, d_pivot, d_B, n, d_info);
+        
+        stop = std::chrono::high_resolution_clock::now();                              // timer stop
+                
         cudaStatus = cudaDeviceSynchronize();
         cudaStatus = cudaMemcpy(&info_gpu, d_info, sizeof(int), cudaMemcpyDeviceToHost); // d_info -> info_gpu
         printf("after getrf + getrs: info_gpu = %d\n", info_gpu);
         cudaStatus = cudaMemcpy(matrixB, d_B, n * n * sizeof(double), cudaMemcpyDeviceToHost); // copy d_B -> matrixB
-        stop = std::chrono::high_resolution_clock::now();                              // timer stop
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start); // elapsed time
         elapsed_time_GPU = duration.count() * 1.e-9;
 

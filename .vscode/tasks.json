@@ -3,7 +3,7 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/local/cuda-12.3/bin/nvcc",
+            "command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
             //"command": "/usr/bin/mpic++",            
             //"command": "/usr/bin/g++",
             "args": [
@@ -24,6 +24,7 @@
                 "-lblas",
                 "-lcublas",
                 "-lcusolver",
+                "-lcudart",
                 "-lopenblas",
                 "-llapack",
                 "-llapacke",
