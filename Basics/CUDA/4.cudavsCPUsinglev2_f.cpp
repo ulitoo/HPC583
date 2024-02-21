@@ -6,7 +6,7 @@ using namespace std;
 
 /////////////////////////////   General Purpose  FUNCTIONS
 
-int Read_Matrix_file(double *matrix, int size, char *filename)
+int Read_Matrix_file(float *matrix, int size, char *filename)
 {
     // Open the binary file for reading and handle error
     std::ifstream input(filename, std::ios::binary);
@@ -16,7 +16,7 @@ int Read_Matrix_file(double *matrix, int size, char *filename)
         return 1;
     }
     // Read the binary data into the vector
-    input.read(reinterpret_cast<char *>(matrix), sizeof(double) * size);
+    input.read(reinterpret_cast<char *>(matrix), sizeof(float) * size);
     // Check if read was successful and handle error
     if (!input)
     {
@@ -26,25 +26,25 @@ int Read_Matrix_file(double *matrix, int size, char *filename)
     std::cout << "File " << filename << " read correctly!" << std::endl;
     return 0;
 }
-void Write_A_over_B(double *matrixA, double *matrixB, int m, int n)
+void Write_A_over_B(float *matrixA, float *matrixB, int m, int n)
 {
     for (int i = 0; i < m * n; i++)
     {
         matrixB[i] = matrixA[i];
     }
 }
-void InverseMatrix(double *matrixA, int n)
+void InverseMatrix(float *matrixA, int n)
 {
     int ipiv[n];
     int info;
     // Compute the inverse using LAPACK's dgetrf and dgetri
     // Perform LU factorization
-    info = LAPACKE_dgetrf(LAPACK_COL_MAJOR, n, n, matrixA, n, ipiv);
+    info = LAPACKE_sgetrf(LAPACK_COL_MAJOR, n, n, matrixA, n, ipiv);
 
     if (info == 0)
     {
         // LU factorization succeeded, now compute the inverse
-        info = LAPACKE_dgetri(LAPACK_COL_MAJOR, n, matrixA, n, ipiv);
+        info = LAPACKE_sgetri(LAPACK_COL_MAJOR, n, matrixA, n, ipiv);
 
         if (info != 0)
         {
@@ -56,7 +56,7 @@ void InverseMatrix(double *matrixA, int n)
         std::cerr << "Error in LAPACKE_dgetrf: " << info << std::endl;
     }
 }
-void PrintColMatrix(double *matrix, int m, int n)
+void PrintColMatrix(float *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
     {
@@ -75,14 +75,14 @@ void PrintColMatrix(double *matrix, int m, int n)
     }
     cout << "\n";
 }
-void MakeZeroes(double *matrix, int m, int n)
+void MakeZeroes(float *matrix, int m, int n)
 {
     for (int i = 0; i < m * n; i++)
     {
         matrix[i] = 0.0;
     }
 }
-void MakeIdentity(double *matrix, int m, int n)
+void MakeIdentity(float *matrix, int m, int n)
 {
     for (int i = 0; i < m; i++)
     {
@@ -99,11 +99,11 @@ void MakeIdentity(double *matrix, int m, int n)
         }
     }
 }
-int MaxRow(double *matrix, int n)
+int MaxRow(float *matrix, int n)
 {
     int maxrow;
-    double maxabsvalue = 0;
-    double temp_abs_element;
+    float maxabsvalue = 0;
+    float temp_abs_element;
 
     for (int i = 0; i < n; i++)
     {
@@ -116,12 +116,12 @@ int MaxRow(double *matrix, int n)
     }
     return maxrow;
 }
-int MaxRow2(double *matrix, int N, int n)
+int MaxRow2(float *matrix, int N, int n)
 {
     int offset = N - n;
     int maxrow = offset;
-    double maxabsvalue = 0.0;
-    double temp_abs_element;
+    float maxabsvalue = 0.0;
+    float temp_abs_element;
 
     for (int i = offset; i < N; i++)
     {
@@ -134,18 +134,18 @@ int MaxRow2(double *matrix, int N, int n)
     }
     return maxrow;
 }
-double MatrixDistance_norm2(double *matrixa, double *matrixb, int m, int n)
+float MatrixDistance_norm2(float *matrixa, float *matrixb, int m, int n)
 {
-    double diff = 0.0;
+    float diff = 0.0;
     for (int i = 0; i < m * n; ++i)
     {
         diff += (matrixa[i] - matrixb[i]) * (matrixa[i] - matrixb[i]);
     }
     return sqrt(diff);
 }
-void SwapRow_ColMajMatrix(double *matrix, int from, int towards, int m, int n)
+void SwapRow_ColMajMatrix(float *matrix, int from, int towards, int m, int n)
 {
-    double tmpval;
+    float tmpval;
     for (int i = 0; i < n * m; i += m)
     {
         tmpval = matrix[towards + i];
@@ -153,28 +153,28 @@ void SwapRow_ColMajMatrix(double *matrix, int from, int towards, int m, int n)
         matrix[from + i] = tmpval;
     }
 }
-double double_machine_epsilon()
+float float_machine_epsilon()
 {
-    double epsilon,tmp;
-    double one=1.;
-    double half=1./2.;
+    float epsilon,tmp;
+    float one=1.;
+    float half=1./2.;
     int j;
 
     for (j=0;;j++){
-        tmp = 1.+pow(half,static_cast<double>(j)); 
+        tmp = 1.+pow(half,static_cast<float>(j)); 
         
         if ((tmp-one) == 0.){
             break;
         } 
 
     }
-    //std::cout << "Iter: " << j-1 << " Value:" << pow(half,static_cast<double>(j-1)) << endl;
-    epsilon = pow(half,static_cast<double>(j-1));
+    //std::cout << "Iter: " << j-1 << " Value:" << pow(half,static_cast<float>(j-1)) << endl;
+    epsilon = pow(half,static_cast<float>(j-1));
     return epsilon;
 }
 
 /////////////////////////////   Triangular Solver FUNCTIONS
-void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
+void InitializeSubmatrices(float *matrixc, float *C11, float *C12, float *C21, float *C22, int m, int p)
 {
     // Initialize will Create the submatrices based on the big matrix
     int mm = m / 2;
@@ -209,7 +209,7 @@ void InitializeSubmatrices(double *matrixc, double *C11, double *C12, double *C2
         }
     }
 }
-void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, double *C22, int m, int p)
+void CollectSubmatrices(float *matrixc, float *C11, float *C12, float *C21, float *C22, int m, int p)
 {
     // Collect Results of Xxx to the big matrix X
     MakeZeroes(matrixc, m, p);
@@ -245,7 +245,7 @@ void CollectSubmatrices(double *matrixc, double *C11, double *C12, double *C21, 
         }
     }
 }
-void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
+void UpperTriangularSolverRecursiveReal_0(float *matrixU, float *matrixB, float *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
     if (n == 1)
@@ -262,18 +262,18 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
         int pp = p / 2;
         int pp2 = p - pp;
 
-        double *U11 = (double *)malloc(nn * nn * sizeof(double));
-        double *U12 = (double *)malloc(nn * nn2 * sizeof(double));
-        double *U21 = (double *)malloc(nn2 * nn * sizeof(double));
-        double *U22 = (double *)malloc(nn2 * nn2 * sizeof(double));
-        double *B11 = (double *)malloc(nn * pp * sizeof(double));
-        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
-        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
-        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        double *X11 = (double *)malloc(nn * pp * sizeof(double));
-        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
-        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
-        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        float *U11 = (float *)malloc(nn * nn * sizeof(float));
+        float *U12 = (float *)malloc(nn * nn2 * sizeof(float));
+        float *U21 = (float *)malloc(nn2 * nn * sizeof(float));
+        float *U22 = (float *)malloc(nn2 * nn2 * sizeof(float));
+        float *B11 = (float *)malloc(nn * pp * sizeof(float));
+        float *B12 = (float *)malloc(nn * pp2 * sizeof(float));
+        float *B21 = (float *)malloc(nn2 * pp * sizeof(float));
+        float *B22 = (float *)malloc(nn2 * pp2 * sizeof(float));
+        float *X11 = (float *)malloc(nn * pp * sizeof(float));
+        float *X12 = (float *)malloc(nn * pp2 * sizeof(float));
+        float *X21 = (float *)malloc(nn2 * pp * sizeof(float));
+        float *X22 = (float *)malloc(nn2 * pp2 * sizeof(float));
 
         // Initializa Axx and Bxx matrices!
         InitializeSubmatrices(matrixU, U11, U12, U21, U22, n, n);
@@ -322,7 +322,7 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
         free(X22);
     }
 }
-void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, double *matrixX, int n, int p)
+void LowerTriangularSolverRecursiveReal_0(float *matrixL, float *matrixB, float *matrixX, int n, int p)
 {
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
     if (n == 1)
@@ -339,18 +339,18 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
         int pp = (p / 2);
         int pp2 = p - pp;
 
-        double *L11 = (double *)malloc(nn * nn * sizeof(double));
-        double *L12 = (double *)malloc(nn * nn2 * sizeof(double));
-        double *L21 = (double *)malloc(nn2 * nn * sizeof(double));
-        double *L22 = (double *)malloc(nn2 * nn2 * sizeof(double));
-        double *B11 = (double *)malloc(nn * pp * sizeof(double));
-        double *B12 = (double *)malloc(nn * pp2 * sizeof(double));
-        double *B21 = (double *)malloc(nn2 * pp * sizeof(double));
-        double *B22 = (double *)malloc(nn2 * pp2 * sizeof(double));
-        double *X11 = (double *)malloc(nn * pp * sizeof(double));
-        double *X12 = (double *)malloc(nn * pp2 * sizeof(double));
-        double *X21 = (double *)malloc(nn2 * pp * sizeof(double));
-        double *X22 = (double *)malloc(nn2 * pp2 * sizeof(double));
+        float *L11 = (float *)malloc(nn * nn * sizeof(float));
+        float *L12 = (float *)malloc(nn * nn2 * sizeof(float));
+        float *L21 = (float *)malloc(nn2 * nn * sizeof(float));
+        float *L22 = (float *)malloc(nn2 * nn2 * sizeof(float));
+        float *B11 = (float *)malloc(nn * pp * sizeof(float));
+        float *B12 = (float *)malloc(nn * pp2 * sizeof(float));
+        float *B21 = (float *)malloc(nn2 * pp * sizeof(float));
+        float *B22 = (float *)malloc(nn2 * pp2 * sizeof(float));
+        float *X11 = (float *)malloc(nn * pp * sizeof(float));
+        float *X12 = (float *)malloc(nn * pp2 * sizeof(float));
+        float *X21 = (float *)malloc(nn2 * pp * sizeof(float));
+        float *X22 = (float *)malloc(nn2 * pp2 * sizeof(float));
 
         // Initialize Axx and Bxx matrices!
         InitializeSubmatrices(matrixL, L11, L12, L21, L22, n, n);
@@ -401,13 +401,13 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
     }
 }
 
-void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *matrixSol, int n)
+void LowerTriangularSolverNaiveReal(float *matrixL, float *matrixB, float *matrixSol, int n)
 {
     for (int j = 0; j < n; j++)
     {
         for (int i = 0; i < n; i++)
         {
-            double tempval = 0;
+            float tempval = 0;
             for (int k = 0; k < i; k++)
             {
                 tempval += matrixL[i + k * n] * matrixSol[k + j * n];
@@ -416,13 +416,13 @@ void LowerTriangularSolverNaiveReal(double *matrixL, double *matrixB, double *ma
         }
     }
 }
-void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *matrixSol, int n)
+void UpperTriangularSolverNaiveReal(float *matrixU, float *matrixB, float *matrixSol, int n)
 {
     for (int j = 0; j < n; j++)
     {
         for (int i = n - 1; i >= 0; i--)
         {
-            double tempval = 0;
+            float tempval = 0;
             for (int k = n - 1; k > i; k--)
             {
                 tempval += matrixU[i + k * n] * matrixSol[k + j * n];
@@ -433,7 +433,7 @@ void UpperTriangularSolverNaiveReal(double *matrixU, double *matrixB, double *ma
 }
 
 /////////////////////////////   LU Decomposition FUNCTIONS
-void ipiv_to_P(int *ipiv, int n, double *P)
+void ipiv_to_P(int *ipiv, int n, float *P)
 {
     MakeIdentity(P, n, n);
 
@@ -442,7 +442,7 @@ void ipiv_to_P(int *ipiv, int n, double *P)
         SwapRow_ColMajMatrix(P, i, ipiv[i], n, n);
     }
 }
-void SchurComplement(double *matrix, int N, int n)
+void SchurComplement(float *matrix, int N, int n)
 {
     int offset = (N - n);
     int offset2 = offset * (N + 1);
@@ -458,7 +458,7 @@ void SchurComplement(double *matrix, int N, int n)
         }
     }
 }
-void SchurComplement2(double *matrix, int n)
+void SchurComplement2(float *matrix, int n)
 {
     // ONLY 1 matrix, rewrite A22 as S22 ! ; N is the original A size ; n is the size of A in the recursion; n-1 is size of A22
     // Without offset concept just 1 rank lower
@@ -471,7 +471,7 @@ void SchurComplement2(double *matrix, int n)
         }
     }
 }
-void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix, int N, int n)
+void LUdecompositionRecursive2(float *matrix, float *Lmatrix, float *Umatrix, int N, int n)
 {
     // Assume square Matrix for simplicity
 
@@ -504,7 +504,7 @@ void LUdecompositionRecursive2(double *matrix, double *Lmatrix, double *Umatrix,
         LUdecompositionRecursive2(matrix, Lmatrix, Umatrix, N, n - 1);
     }
 }
-void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, double *UmatrixBIG, int *IPIV, int N, int n)
+void LUdecompositionRecursive4Pivot(float *AmatrixBIG, float *LmatrixBIG, float *UmatrixBIG, int *IPIV, int N, int n)
 {
     //   WITHOUT MALLOC
     int offset = (N - n);
@@ -548,11 +548,11 @@ void LUdecompositionRecursive4Pivot(double *AmatrixBIG, double *LmatrixBIG, doub
 }
 
 /////////////////////////////// Error Calculating Functions
-double InfinityNorm(double *matrixA, int n)
+float InfinityNorm(float *matrixA, int n)
 {
     // Find the biggest sum of abs (rows)
-    double max = 0.0;
-    double tmp = 0.0;
+    float max = 0.0;
+    float tmp = 0.0;
     for (int i = 0; i < n; i++)
     {
         tmp = 0.0;
@@ -567,11 +567,11 @@ double InfinityNorm(double *matrixA, int n)
     }
     return max;
 }
-double InfinityNormVector(double *vectorA, int n)
+float InfinityNormVector(float *vectorA, int n)
 {
     // Find the biggest abs
-    double max = 0.0;
-    double tmp = 0.0;
+    float max = 0.0;
+    float tmp = 0.0;
     for (int i = 0; i < n; i++)
     {
         tmp = abs(vectorA[i]); 
@@ -582,13 +582,13 @@ double InfinityNormVector(double *vectorA, int n)
     }
     return max;
 }
-double ConditionNumber(double *matrixA, int m, int n)
+float ConditionNumber(float *matrixA, int m, int n)
 {
     //  Find condition number for the Matrix /Norm of matrix/ Infinity norm (max row or col)
     //  The infinity-norm of a square matrix is the maximum of the absolute row sum
     //  Condition number is the ||M|| times ||M^(-1)||, the closer to 1 the more stable
-    double *matrixA_original = (double *)malloc(n * n * sizeof(double));
-    double InfNormA, InfNormAinv;
+    float *matrixA_original = (float *)malloc(n * n * sizeof(float));
+    float InfNormA, InfNormAinv;
 
     Write_A_over_B(matrixA, matrixA_original, n, n);
 
@@ -601,10 +601,10 @@ double ConditionNumber(double *matrixA, int m, int n)
     free(matrixA_original);
     return InfNormA * InfNormAinv;
 }
-double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double *matrixResidual, int m, int n)
+float residual_matrix(float *matrixA, float *matrixX, float *matrixB, float *matrixResidual, int m, int n)
 {
-    double *CalculatedB = (double *)malloc(m * n * sizeof(double));
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    float *CalculatedB = (float *)malloc(m * n * sizeof(float));
+    cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
     for (int i = 0; i < m*n; i++)
     {
         matrixResidual[i] = CalculatedB[i] - matrixB[i];
@@ -612,29 +612,29 @@ double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double
     free(CalculatedB);
     return InfinityNorm(matrixResidual,m);
 }
-void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
+void ErrorCalc_Display(float *matrixA, float *matrixB, float *matrixX, long double elapsed_time, int n, int p)
 {
-    double *CalculatedB = (double *)malloc(n * p * sizeof(double));
+    float *CalculatedB = (float *)malloc(n * p * sizeof(float));
     MakeZeroes(CalculatedB, n, p);
     // NaiveMatrixMultiplyCol(matrixA, matrixX, CalculatedB, n, n, p);
     // Substitute by LAPACK dGEMM
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
-    double dist = MatrixDistance_norm2(matrixB, CalculatedB, n, p);
+    cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, 1.0, matrixA, n, matrixX, n, 0.0, CalculatedB, n);
+    float dist = MatrixDistance_norm2(matrixB, CalculatedB, n, p);
     cout << "\nVector Distance - Error (AX - B):----------------> : " << dist << "\n";
     cout << "Elapsed Time:------------------------------------> : " << elapsed_time << " s.\n\n";
     free(CalculatedB);
 }
-void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matrixX, double *results, int m, int n)
+void ErrorCalc_Display_v2(int i, float *matrixA, float *matrixB, float *matrixX, float *results, int m, int n)
 {
     // !!! this function returns a vector with : [7] [Matrix size, Residual Norm,A Norm, X Norm, Machine Epsilon, Fwd Error,Elapsed Time]
     // Infinity norm of a vector is its max absolute value
     
-    double *matrixResidual = (double *)malloc(m * n * sizeof(double));
-    double residual_norm = residual_matrix(matrixA,matrixX,matrixB,matrixResidual,m,n);
-    double epsilon = double_machine_epsilon();
-    double A_norm = InfinityNorm(matrixA,m);
-    double X_norm = InfinityNorm(matrixX,m);
-    double fwd_error = residual_norm/(A_norm*X_norm*epsilon);
+    float *matrixResidual = (float *)malloc(m * n * sizeof(float));
+    float residual_norm = residual_matrix(matrixA,matrixX,matrixB,matrixResidual,m,n);
+    float epsilon = float_machine_epsilon();
+    float A_norm = InfinityNorm(matrixA,m);
+    float X_norm = InfinityNorm(matrixX,m);
+    float fwd_error = residual_norm/(A_norm*X_norm*epsilon);
     cout << "\nResidual Norm:----------------> : " << residual_norm << "\n";
     cout << "A Norm:----------------> : " << A_norm << "\n";
     cout << "X Norm:----------------> : " << X_norm << "\n";

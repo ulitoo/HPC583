@@ -3,7 +3,7 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
+            "command": "/usr/local/cuda-12.3/bin/nvcc",
             //"command": "/usr/bin/mpic++",            
             //"command": "/usr/bin/g++",
             "args": [
@@ -13,18 +13,14 @@
                 "${file}",
                 // include a file_f.cpp file with all functions
                 //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
-                "-arch", "sm_61", // CUDA 6.1 nvidia architecture
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lfftw3",
+                //"-lblacs",
                 "-lm",
                 "-lgfortran",
                 "-lscalapack",
                 "-lblas",
-                "-lcublas",
-                "-lcusolver",
-                "-lcudart",
-                "-lmagma",
                 "-lopenblas",
                 "-llapack",
                 "-llapacke",
