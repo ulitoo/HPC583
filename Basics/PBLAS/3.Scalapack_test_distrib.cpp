@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     char tmp[10] = "Col-major";
 
     // Define the matrix sizes and block sizes
-    int N = 10;
+    int N = 8;
     int NB = 2;
 
     // Initialize MPI
@@ -128,9 +128,9 @@ int main(int argc, char **argv)
     // Initialize the local matrices
     
     for (int i = 0; i < localrows * localcols; ++i)
-        A_local[i] = i;
+        A_local[i] = i+1;
     for (int i = 0; i < localrows * localcols; ++i)
-        B_local[i] = i;
+        B_local[i] = 1.0/(i+1);
     for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
     
