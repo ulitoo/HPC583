@@ -27,6 +27,18 @@ void PrintColMatrix(double *matrix, int m, int n)
 
 int main(int argc, char **argv)
 {
+    if (argc != 3)
+    {
+        std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block)" << std::endl;
+        return 1;
+    }
+
+    // Define the matrix sizes and block sizes
+    //int N = 8;
+    //int NB = 2;
+    int N = std::atoi(argv[1]); // Matrix size (N x N)
+    int NB = std::atoi(argv[2]); // Matrix size (N x N)
+
     // constants
     char transa = 'N';
     char transb = 'N';
@@ -36,10 +48,6 @@ int main(int argc, char **argv)
     int zero = 0;
     int info, context, nprow, npcol, myrow, mycol, localrows, localcols;
     char tmp[10] = "Col-major";
-
-    // Define the matrix sizes and block sizes
-    int N = 8;
-    int NB = 2;
 
     // Initialize MPI
     MPI_Init(&argc, &argv);
@@ -104,8 +112,8 @@ int main(int argc, char **argv)
             {
                 // A_global[i + N * j] = (i == j) ? 1.0 : 0.0; // Identity
                 // A_global[i + N * j] = i * N + j + 1; // 1 2 3 4 ...
-                A_global[i + N * j] = 1.0; // 1 1 1 ...
-                B_global[i + N * j] = 2.0; // 2 2 2 ...
+                A_global[i + N * j] = (i + N * j)+1; // 1 1 1 ...
+                B_global[i + N * j] = 1.0/((i + N * j)+1); // 2 2 2 ...
             }
         }
 
@@ -118,23 +126,26 @@ int main(int argc, char **argv)
         //Cpdgemr2d(N, N, A_global, 1, 1, &descA_global, A_local, 1, 1, descA_local, context);
 
         // Print Global Matrix A and B
-        //PrintColMatrix(A_global, N, N);
-        //PrintColMatrix(B_global, N, N);
+        cout << "GLOBAL A:\n";
+        PrintColMatrix(A_global, N, N);
+        cout << "GLOBAL B:\n";
+        PrintColMatrix(B_global, N, N);
     }
 
-    // Distribute the global Matrices into the different local processors with 2D block Cyclic 
-    
+    // Distribute the global Matrices into the different local processors with 2D block Cyclic
 
     // Initialize the local matrices
-    
+
     for (int i = 0; i < localrows * localcols; ++i)
-        A_local[i] = i+1;
+        A_local[i] = i + 1;
     for (int i = 0; i < localrows * localcols; ++i)
-        B_local[i] = 1.0/(i+1);
+        B_local[i] = 1.0 / (i + 1);
     for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
-    
+
+    cout << "LOCAL A:\n";
     PrintColMatrix(A_local, N, N);
+    cout << "LOCAL B:\n";
     PrintColMatrix(B_local, N, N);
     // Perform the matrix multiplication using pdgemm
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
