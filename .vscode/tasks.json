@@ -3,8 +3,8 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
-            //"command": "/usr/bin/mpic++",            
+            //"command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
+            "command": "/usr/bin/mpic++",            
             //"command": "/usr/bin/g++",
             "args": [
                 //"-fdiagnostics-color=always", //REMOVE FOR CUDA COMPILER
@@ -12,8 +12,13 @@
                 "-O3",
                 "${file}",
                 // include a file_f.cpp file with all functions
+<<<<<<< HEAD
                 "${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
                 "-arch", "sm_61", // CUDA 6.1 nvidia architecture
+=======
+                //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
+                //"-arch", "sm_61", // CUDA 6.1 nvidia architecture
+>>>>>>> 49c1ea98f80ceed18104df12e74d34b2ef44a754
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lfftw3",
@@ -21,14 +26,14 @@
                 "-lgfortran",
                 "-lscalapack",
                 "-lblas",
-                "-lcublas",
-                "-lcusolver",
-                "-lcudart",
-                "-lmagma",
                 "-lopenblas",
                 "-llapack",
                 "-llapacke",
                 "-lpthread",
+                //"-lcublas",       //CUDA and NVIDIA GPU
+                //"-lcusolver",     //CUDA and NVIDIA GPU
+                //"-lcudart",       //CUDA and NVIDIA GPU
+                //"-lmagma",        //CUDA and NVIDIA GPU
                 "-lboost_iostreams"
             ],
             "options": {

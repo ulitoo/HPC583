@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     char tmp[10] = "Col-major";
 
     // Define the matrix sizes and block sizes
-    int N = 10;
+    int N = 8;
     int NB = 2;
 
     // Initialize MPI
@@ -117,23 +117,25 @@ int main(int argc, char **argv)
         // Distribute the global matrix
         //Cpdgemr2d(N, N, A_global, 1, 1, &descA_global, A_local, 1, 1, descA_local, context);
 
-        // Print Global Matrix A
-        PrintColMatrix(A_global, N, N);
-        PrintColMatrix(B_global, N, N);
+        // Print Global Matrix A and B
+        //PrintColMatrix(A_global, N, N);
+        //PrintColMatrix(B_global, N, N);
     }
 
     // Distribute the global Matrices into the different local processors with 2D block Cyclic 
     
 
     // Initialize the local matrices
-    /*
+    
     for (int i = 0; i < localrows * localcols; ++i)
-        A_local[i] = 1.0;
+        A_local[i] = i+1;
     for (int i = 0; i < localrows * localcols; ++i)
-        B_local[i] = 2.0;
+        B_local[i] = 1.0/(i+1);
     for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
-    */
+    
+    PrintColMatrix(A_local, N, N);
+    PrintColMatrix(B_local, N, N);
     // Perform the matrix multiplication using pdgemm
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
 
