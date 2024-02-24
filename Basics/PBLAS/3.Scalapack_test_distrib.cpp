@@ -73,8 +73,8 @@ int main(int argc, char **argv)
     localrows = numroc_(&N, &NB, &myrow, &zero, &nprow);
     localcols = numroc_(&N, &NB, &mycol, &zero, &npcol);
 
-    cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << "\n";
-
+    cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:"<< myrow <<", mycol:"<< mycol <<" \n";
+  \
     // Global matrix descriptor
     int descA_1[9];
     // int *descA_1;
@@ -133,20 +133,21 @@ int main(int argc, char **argv)
     }
 
     // Distribute the global Matrices into the different local processors with 2D block Cyclic
+    //pdgemr2d_(&n, &n, global_A.data(), &n, &n, desc_a, local_A.data(), &nloc, &nloc, desc_a, &ctxt);
 
     // Initialize the local matrices
 
     for (int i = 0; i < localrows * localcols; ++i)
-        A_local[i] = i + 1;
+        A_local[i] = (i + (localrows * localcols * mycol)) + 1;
     for (int i = 0; i < localrows * localcols; ++i)
-        B_local[i] = 1.0 / (i + 1);
+        B_local[i] = 1.0 / ((i + (localrows * localcols * mycol)) + 1);
     for (int i = 0; i < localrows * localcols; ++i)
         C_local[i] = 0.0;
 
     cout << "LOCAL A:\n";
-    PrintColMatrix(A_local, N, N);
+    PrintColMatrix(A_local, localrows, localcols);
     cout << "LOCAL B:\n";
-    PrintColMatrix(B_local, N, N);
+    PrintColMatrix(B_local, localrows, localcols);
     // Perform the matrix multiplication using pdgemm
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
 
