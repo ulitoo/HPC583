@@ -136,21 +136,22 @@ void CollectMatrix(int context, double *globalMatrix, int M, int N, int Mb, int 
     }
 }
 
-// ***********************  TEST TO SCATTER MATRIX
+// ***********************  TEST TO SCATTER and COLLECT MATRIX
 
 int main(int argc, char **argv)
 {
-     if (argc != 4)
+     if (argc != 6)
     {
-        std::cerr << "Usage: " << argv[0] << "N (Dimension of Matrix)  NB (Dimension of Block) (dime) what procesor to check locally:"  << std::endl; 
+        std::cerr << "Usage: " << argv[0] << "M N (Dimension of Matrix) MB NB (Dimension of Block) (dime) what procesor to check locally:"  << std::endl; 
         return 1;
     }
     // Define matrix size and block size
-    int N = std::atoi(argv[1]);  // Matrix size (N x N)
-    int M = N;
-    int NB = std::atoi(argv[2]); // Matrix block (NB x NB)
-    int MB = NB;
-    int dime = std::atoi(argv[3]); 
+    int M = std::atoi(argv[1]); 
+    int N = std::atoi(argv[2]);  // Matrix size (M x N)
+    int MB = std::atoi(argv[3]);
+    int NB = std::atoi(argv[4]); // Matrix block (MB x NB)
+
+    int dime = std::atoi(argv[5]); 
     int zero = 0;
     char ColMajor[10] = "Col-major";
 
