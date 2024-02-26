@@ -159,10 +159,10 @@ int main(int argc, char **argv)
 
     if (rank == 0)
     {
-        double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
+        //double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
         //std::cout << "Collected Matrix:" << std::endl;
         //PrintColMatrix(C_global, M, N);
-        std::cout << "Collected Error:" << C_error << std::endl;
+        //std::cout << "Collected Error:" << C_error << std::endl;
     }
 
     // Deallocate memory and finalize BLACS
