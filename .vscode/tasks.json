@@ -13,6 +13,8 @@
                 "${file}",
                 // include a file_f.cpp file with all functions
                 //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
+                // include 0.functions.cpp
+                "${fileDirname}/0.functions.cpp", 
                 //"-arch", "sm_61", // CUDA 6.1 nvidia architecture
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
