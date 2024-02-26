@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <iostream>
+#include <cblas.h>
 #include "scalapack.h"
 
 using namespace std;
@@ -33,11 +34,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Define the matrix sizes and block sizes
-    //int N = 8;
-    //int NB = 2;
-    int N = std::atoi(argv[1]); // Matrix size (N x N)
-    int NB = std::atoi(argv[2]); // Matrix size (N x N)
+    int N = std::atoi(argv[1]);  // Matrix size (N x N)
+    int NB = std::atoi(argv[2]); // Matrix block (NB x NB)
 
     // constants
     char transa = 'N';
@@ -47,7 +45,6 @@ int main(int argc, char **argv)
     int uno = 1;
     int zero = 0;
     int info, context, nprow, npcol, myrow, mycol, localrows, localcols;
-    char tmp[10] = "Col-major";
 
     // Initialize MPI
     MPI_Init(&argc, &argv);
@@ -60,32 +57,29 @@ int main(int argc, char **argv)
     // Set up the grid for Scalapack
     Cblacs_pinfo(&rank, &size);
     Cblacs_get(-1, 0, &context);
-    // Cblacs_gridinit(&context, tmp, 1, size);
 
     // Determine the number of processes in each dimension of the grid
     nprow = static_cast<int>(sqrt(size));
     npcol = size / nprow;
 
-    Cblacs_gridinit(&context, tmp, nprow, npcol);
+    Cblacs_gridinit(&context, (char *)"Col-major", nprow, npcol);
     Cblacs_gridinfo(context, &nprow, &npcol, &myrow, &mycol);
 
     // Determine local matrix dimensions
     localrows = numroc_(&N, &NB, &myrow, &zero, &nprow);
     localcols = numroc_(&N, &NB, &mycol, &zero, &npcol);
 
-    cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:"<< myrow <<", mycol:"<< mycol <<" \n";
-  \
-    // Global matrix descriptor
-    int descA_1[9];
-    // int *descA_1;
-    // descinit_(descA_1, &N, &N, &NB, &NB, &nprow, &npcol, &context, &N, &info);
+    cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:" << myrow << ", mycol:" << mycol << " \n";
 
-    /*cout << "Info:" << info << "\n";
-    for (int j = 0; j < 9; ++j)
-    {
-        cout << "DescA_1:[" << j <<"]:"<<descA_1[j]<<"\n";
-    }
-    */
+    // Allocate memory for the local matrices
+    double *A_local = new double[localrows * localcols];
+    double *B_local = new double[localrows * localcols];
+    double *C_local = new double[localrows * localcols];
+
+    double *A_global = new double[N * N];
+    double *B_global = new double[N * N];
+    double *C_global = new double[N * N];
+    double *C1_global = new double[N * N];
 
     // Local matrix descriptor
     int descA_local[9], descB_local[9], descC_local[9];
@@ -93,52 +87,53 @@ int main(int argc, char **argv)
     descinit_(descB_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
     descinit_(descC_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
 
-    // Allocate memory for the local matrices
-    double *A_local = new double[localrows * localcols];
-    double *B_local = new double[localrows * localcols];
-    double *C_local = new double[localrows * localcols];
+    // Global matrix descriptor
+    int descA_global[9], descB_global[9], descC_global[9];
 
     // Initialize the global matrix on the root process
-    if (myrow == 0 && mycol == 0)
+    // if (rank == 0)
+    //{
+    // Initialize your global matrix A here
+    // Example: A = identity matrix or   ( 1 2 3 ....)
+    for (int i = 0; i < N; ++i)
     {
-        double *A_global = new double[N * N];
-        double *B_global = new double[N * N];
-
-        // Initialize your global matrix A here
-        // Example: A = identity matrix or ( 1 2 3 ....)
-        for (int i = 0; i < N; ++i)
+        for (int j = 0; j < N; ++j)
         {
-            for (int j = 0; j < N; ++j)
-            {
-                // A_global[i + N * j] = (i == j) ? 1.0 : 0.0; // Identity
-                // A_global[i + N * j] = i * N + j + 1; // 1 2 3 4 ...
-                A_global[i + N * j] = (i + N * j)+1; // 1 1 1 ...
-                B_global[i + N * j] = 1.0/((i + N * j)+1); // 2 2 2 ...
-            }
+            // A_global[i + N * j] = (i == j) ? 1.0 : 0.0; // Identity
+            // A_global[i + N * j] = i * N + j + 1; // 1 2 3 4 ...
+            A_global[i + N * j] = (i + N * j) + 1;         // 1 1 1 ...
+            B_global[i + N * j] = 1.0 / ((i + N * j) + 1); // 2 2 2 ...
         }
-
-        // Global matrix descriptor
-        int descA_global[9], descB_global[9];
-        descinit_(descA_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
-        descinit_(descB_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
-
-        // Distribute the global matrix
-        //Cpdgemr2d(N, N, A_global, 1, 1, &descA_global, A_local, 1, 1, descA_local, context);
-
-        // Print Global Matrix A and B
-        cout << "GLOBAL A:\n";
-        PrintColMatrix(A_global, N, N);
-        cout << "GLOBAL B:\n";
-        PrintColMatrix(B_global, N, N);
     }
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0, A_global, N, B_global, N, 0.0, C1_global, N);
+
+    descinit_(descA_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+    descinit_(descB_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+    descinit_(descC_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+
+    // Distribute the global matrix
+    // Cpdgemr2d(N, N, A_global, 1, 1, &descA_global, A_local, 1, 1, descA_local, context);
+
+    // Print Global Matrix A and B
+    cout << "GLOBAL A:\n";
+    PrintColMatrix(A_global, N, N);
+    cout << "GLOBAL B:\n";
+    PrintColMatrix(B_global, N, N);
+    cout << "GLOBAL AxB=C1:\n";
+    PrintColMatrix(C1_global, N, N);
+    //}
 
     // Distribute the global Matrices into the different local processors with 2D block Cyclic
-    //pdgemr2d_(&n, &n, global_A.data(), &n, &n, desc_a, local_A.data(), &nloc, &nloc, desc_a, &ctxt);
-
-    // Initialize the local matrices
+    // pdgemr2d_(&n, &n, global_A.data(), &n, &n, desc_a, local_A.data(), &nloc, &nloc, desc_a, &ctxt);
+    //pdgemr2d_(&N, &N, A_global, &N, &N, descA_global, A_local, &localrows, &localcols, descA_local, &context);
+    
+    
+    // Gather info from local matrices based on local  -> Formulas in PDF
 
     for (int i = 0; i < localrows * localcols; ++i)
         A_local[i] = (i + (localrows * localcols * mycol)) + 1;
+    
+    
     for (int i = 0; i < localrows * localcols; ++i)
         B_local[i] = 1.0 / ((i + (localrows * localcols * mycol)) + 1);
     for (int i = 0; i < localrows * localcols; ++i)
@@ -149,7 +144,7 @@ int main(int argc, char **argv)
     cout << "LOCAL B:\n";
     PrintColMatrix(B_local, localrows, localcols);
     // Perform the matrix multiplication using pdgemm
-    pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    pdgemm_(&transa,&transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
 
     cout << "Rank: " << rank << " of Size:" << size << "\n";
     PrintColMatrix(C_local, localrows, localcols);

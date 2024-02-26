@@ -65,7 +65,8 @@ int main() {
     local_A.resize(mloc * nloc);
 
     // Distribute global matrix among processes
-    if (myrank == 0) {
+    if (myrank == 0)
+    {
         global_A.resize(n * n);
         // Fill global_A with data
         // ...
@@ -90,9 +91,116 @@ int main() {
 }
 
 // Function to calculate local dimensions
-int iloc(int n, int nb, int iproc, int isrcproc, int nprocs) {
+int iloc(int n, int nb, int iproc, int isrcproc, int nprocs)
+{
     int nblocks = n / nb;
     int leftovers = n % nb;
     int loc_dim = (iproc < leftovers) ? nblocks + 1 : nblocks;
     return loc_dim;
+}
+
+{
+
+    MPI_Init(&argc, &argv);
+
+    // Get the rank and size of the MPI communicator
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Set up the grid for Scalapack
+    Cblacs_pinfo(&rank, &size);
+    Cblacs_get(-1, 0, &context);
+
+    // Determine the number of processes in each dimension of the grid
+    nprow = static_cast<int>(sqrt(size));
+    npcol = size / nprow;
+
+    Cblacs_gridinit(&context, (char *)"Col-major", nprow, npcol);
+    Cblacs_gridinfo(context, &nprow, &npcol, &myrow, &mycol);
+
+    // Determine local matrix dimensions
+    localrows = numroc_(&N, &NB, &myrow, &zero, &nprow);
+    localcols = numroc_(&N, &NB, &mycol, &zero, &npcol);
+    double *A_local = new double[localrows * localcols];
+    double *A_global = new double[N * N];
+
+    descinit_(descA_local, &N, &N, &NB, &NB, &myrow, &mycol, &context, &localrows, &info);
+    descinit_(descA_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
+
+    pdgemr2d_(&N, &N, A_global, &N, &N, descA_global, A_local, &localrows, &localcols, descA_local, &context);
+}
+
+
+{
+void ScatterMatrix(int2 id, int2 pgDims, const T* global, const MatDesc& desc, T* local, int2 localDims)
+// Pg Dims = process grid dimensions
+// desc is matrix descriptor PROBLEM parameters with context,M,N,Mb,Nb
+// Global is location of global matrix/// Local is location of local matrix
+// localDim is local dimension of the destination local matrix , that is calculated as M x N divided into pxq blocks.....!!!!
+// id is current process identifier id.row// id.col  // id.isRoot // it is the ip x iq 
+{
+    const int M = desc.M;
+    const int N = desc.N;
+    const int Mb = desc.Mb;
+    const int Nb = desc.Nb;
+    const int ctxt = desc.ctxt;
+
+    int sendr = 0;
+    int sendc = 0;
+    int recvr = 0; 
+    int recvc = 0;
+
+    // This is sending BLOCKS of nr x nc from ROOT global matrix to sendr,sendc process as receivers of the nr x nc BLOCKS
+    // nr x nc can be MbXNb as maximum value OR the remainder which will be a smaller block (M-r) x (N-c)
+    // In Ken PDF example we talk about 3x2 blocks of CONTIGUOS Data in Block cyclic 
+    // r and c are the GLOBAL indeces of the upper right corner of the (nr x nc) block to move
+    // sendR and sendC are current process ip and iq ??????????????????
+
+    // This has to be done in conjuction with the size of the process grid in example 2x3 (pxq) in this code pgdims.row x pgdims.col  
+
+    for (int r = 0; r < M; r += Mb, sendr = (sendr + 1) % pgDims.row) 
+    {
+        sendc = 0;
+
+        int nr = std::min(Mb, M - r);
+
+        for (int c = 0; c < N; c += Nb, sendc = (sendc + 1) % pgDims.col) 
+        {
+            int nc = std::min(Nb, N - c);
+
+            if (id.IsRoot()) 
+            {
+                ops::CvGESD2D(ctxt, nr, nc, &global[CMIDX(r, c, M)], M, sendr, sendc);
+            }
+
+            if (id.row == sendr && id.col == sendc) 
+            {
+                ops::CvGERV2D(ctxt, nr, nc, &local[CMIDX(recvr, recvc, localDims.row)], localDims.row, 0, 0);
+                recvc = (recvc + nc) % localDims.col;
+            }
+        }
+
+        if (id.row == sendr)
+            recvr = (recvr + nr) % localDims.row;
+    }
+}
+
+
+
+}
+
+{
+
+template <typename U>
+DistributedMatrix<T> DistributedMatrix<T>::Initialized(int context, int2 blockSize, const LocalMatrix<U>& data)
+{
+    auto A = Uninitialized<U>(context, blockSize, data);
+
+    LocalMatrix<T> m = LocalMatrix<T>::Initialized(data);
+    ScatterMatrix<T>(A.ProcGridId(), A.ProcGridDims(), m.Data(), A.Desc(), A.Data(), A.m_localDims);
+
+    return A;
+}
+
 }
