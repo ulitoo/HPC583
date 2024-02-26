@@ -51,9 +51,9 @@ extern "C"
 	void pdgemr2d_(const int *m, const int *n, double *A, int *IA, int *JA, int *descA, double *B, int *IB, int *JB, int *descB, int *gcontext, int *irsrc, int *icsrc);
 	void pdgemm_(char *jobu, char *jobvt, int *, int *, int *, double *, double *, int *, int *, int *, double *, int *, int *, int *, double *, double *, int *, int *, int *);
 	void pdgeadd_(char TRANS, int *M, int *N, double *ALPHA, double *A, int *IA, int *JA, int *DESCA, double *BETA, double *C, int *IC, int *JC, int *DESCC);
-	void PDGEMM(char TRANSA, char TRANSB, int M, int N, int K, double ALPHA, double *A, int IA, int JA, int *DESCA,
-				double *B, int IB, int JB, int *DESCB, double BETA, double *C, int IC, int JC, int *DESCC);
-	void PDGESV(int N, int NRHS, double *A, int IA, int JA, int *DESCA, int *IPIV, double *B, int IB, int JB, int *DESCB, int &INFO);
+	//void PDGEMM(char TRANSA, char TRANSB, int M, int N, int K, double ALPHA, double *A, int IA, int JA, int *DESCA,
+	//			double *B, int IB, int JB, int *DESCB, double BETA, double *C, int IC, int JC, int *DESCC);
+	//void PDGESV(int N, int NRHS, double *A, int IA, int JA, int *DESCA, int *IPIV, double *B, int IB, int JB, int *DESCB, int &INFO);
 
 	//void Cpdgemr2d(int m, int n, double *ptrmyblock, int ia, int ja, int *ma, double *ptrmynewblock, int ib, int jb, int* mb, int globcontext);
 	

@@ -82,6 +82,9 @@ int main(int argc, char **argv)
     descinit_(descB_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
     descinit_(descC_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
 
+    // Print descA_local
+    // cout << "\nDESCALOCAL: " << descA_local[0]  << " , " << descA_local[1]  << " , " << descA_local[2]  << " , " << descA_local[3]  << " , " << descA_local[4]  << " , " << descA_local[5]  << " , " << descA_local[6]  << " , " << descA_local[7] << " , " << descA_local[8] << " ,info: " << info << " \n";
+
     // Initialize the global matrices on the root process
     if (rank == 0)
     {
@@ -129,6 +132,7 @@ int main(int argc, char **argv)
     // Perform the matrix multiplication using pdgemm
     start = std::chrono::high_resolution_clock::now();
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    //pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Global = duration.count() * 1.e-9;
