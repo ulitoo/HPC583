@@ -20,13 +20,13 @@
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lfftw3",
                 "-lm",
-                "-lgfortran",
                 "-lscalapack",
                 "-lblas",
                 "-lopenblas",
                 "-llapack",
                 "-llapacke",
                 "-lpthread",
+                "-lgfortran",
                 //"-lcublas",       //CUDA and NVIDIA GPU
                 //"-lcusolver",     //CUDA and NVIDIA GPU
                 //"-lcudart",       //CUDA and NVIDIA GPU
