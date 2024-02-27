@@ -82,13 +82,12 @@ int main(int argc, char **argv)
     descinit_(descB_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
     descinit_(descC_local, &N, &N, &NB, &NB, &zero, &zero, &context, &localrows, &info);
 
-    // Global matrix descriptor
-    int descA_global[9], descB_global[9], descC_global[9];
+    // Print descA_local
+    // cout << "\nDESCALOCAL: " << descA_local[0]  << " , " << descA_local[1]  << " , " << descA_local[2]  << " , " << descA_local[3]  << " , " << descA_local[4]  << " , " << descA_local[5]  << " , " << descA_local[6]  << " , " << descA_local[7] << " , " << descA_local[8] << " ,info: " << info << " \n";
 
     // Initialize the global matrices on the root process
     if (rank == 0)
     {
-
         A_global = new double[N * N];
         B_global = new double[N * N];
         C_global = new double[N * N];
@@ -111,10 +110,6 @@ int main(int argc, char **argv)
         elapsed_time_Global = duration.count() * 1.e-9;
         cout << "\nCblas dgemm time:" << elapsed_time_Global << " sec.\n";
 
-        descinit_(descA_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
-        descinit_(descB_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
-        descinit_(descC_global, &N, &N, &NB, &NB, &zero, &zero, &context, &N, &info);
-
         // Print Global Matrix A and B
         /*cout << "GLOBAL A:\n";
         PrintColMatrix(A_global, N, N);
@@ -125,7 +120,7 @@ int main(int argc, char **argv)
         */
     }
 
-    // Distribute the global Matrices into the different local processors with 2D block Cyclic
+    // Scatter the global Matrices into the different local processors with 2D block Cyclic
     start = std::chrono::high_resolution_clock::now();
     ScatterMatrix(context, A_global, M, N, MB, NB, A_local, localrows, localcols, myprow, mypcol, nprow, npcol);
     ScatterMatrix(context, B_global, M, N, MB, NB, B_local, localrows, localcols, myprow, mypcol, nprow, npcol);
@@ -137,6 +132,7 @@ int main(int argc, char **argv)
     // Perform the matrix multiplication using pdgemm
     start = std::chrono::high_resolution_clock::now();
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    //pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Global = duration.count() * 1.e-9;
@@ -162,7 +158,11 @@ int main(int argc, char **argv)
         double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
         //std::cout << "Collected Matrix:" << std::endl;
         //PrintColMatrix(C_global, M, N);
+<<<<<<< HEAD
         std::cout << "\nCollected Error: " << C_error << std::endl;
+=======
+        std::cout << "Collected Error:" << C_error << std::endl;
+>>>>>>> af2702a885f6f8809fe977d64fbf0bfc90f53ef4
     }
 
     // Deallocate memory and finalize BLACS
