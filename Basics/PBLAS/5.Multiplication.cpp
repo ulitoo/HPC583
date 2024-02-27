@@ -158,11 +158,7 @@ int main(int argc, char **argv)
         double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
         //std::cout << "Collected Matrix:" << std::endl;
         //PrintColMatrix(C_global, M, N);
-<<<<<<< HEAD
         std::cout << "\nCollected Error: " << C_error << std::endl;
-=======
-        std::cout << "Collected Error:" << C_error << std::endl;
->>>>>>> af2702a885f6f8809fe977d64fbf0bfc90f53ef4
     }
 
     // Deallocate memory and finalize BLACS
