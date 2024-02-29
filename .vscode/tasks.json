@@ -18,15 +18,15 @@
                 //"-arch", "sm_61", // CUDA 6.1 nvidia architecture
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "-lfftw3",
+                //"-lfftw3",
                 "-lm",
-                "-lgfortran",
                 "-lscalapack",
-                "-lblas",
+                //"-lblas", 
                 "-lopenblas",
-                "-llapack",
+                //"-llapack",
                 "-llapacke",
-                "-lpthread",
+                //"-lpthread",
+                "-lgfortran",
                 //"-lcublas",       //CUDA and NVIDIA GPU
                 //"-lcusolver",     //CUDA and NVIDIA GPU
                 //"-lcudart",       //CUDA and NVIDIA GPU

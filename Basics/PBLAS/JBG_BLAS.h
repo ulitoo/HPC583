@@ -38,3 +38,4 @@ double residual_matrix(double *matrixA, double *matrixX, double *matrixB, double
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p);
 void ErrorCalc_Display_v2(int i, double *matrixA, double *matrixB, double *matrixX, double *results, int m, int n);
 double Fwd_Error_diff(double *matrixA, double *matrixB, int m, int n);
+double InfinityNorm_Error_diff(double *matrixA, double *matrixB, int m, int n);

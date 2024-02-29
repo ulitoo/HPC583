@@ -15,14 +15,19 @@ int main(int argc, char **argv)
 {
     if (argc != 3)
     {
-        //std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block) dime (what process local info to show)" << std::endl;
+        // std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block) dime (what process local info to show)" << std::endl;
         std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block)" << std::endl;
         return 1;
     }
+    // Create a random number generator =>  Get a Seed from random device
+    
+    int seed = 13;
+    std::mt19937_64 rng(seed);
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
 
     int N = std::atoi(argv[1]);  // Matrix size (N x N)
     int NB = std::atoi(argv[2]); // Matrix block (NB x NB)
-    //int dime = std::atoi(argv[3]); 
+    // int dime = std::atoi(argv[3]);
     int M = N;
     int MB = NB;
 
@@ -39,7 +44,7 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    long double elapsed_time_Global, elapsed_time_Paralell;
+    long double elapsed_time_Global, elapsed_time_Paralel,elapsed_time_Collect,elapsed_time_Scatter ;
 
     // Initialize MPI
     MPI_Init(&argc, &argv);
@@ -71,10 +76,10 @@ int main(int argc, char **argv)
     double *B_local = new double[localrows * localcols];
     double *C_local = new double[localrows * localcols];
 
-    double *A_global = nullptr; //= new double[N * N];
-    double *B_global = nullptr; //new double[N * N];
-    double *C_global = nullptr; //new double[N * N];
-    double *C1_global = nullptr; //new double[N * N];
+    double *A_global = nullptr;  //= new double[N * N];
+    double *B_global = nullptr;  // new double[N * N];
+    double *C_global = nullptr;  // new double[N * N];
+    double *C1_global = nullptr; // new double[N * N];
 
     // Local matrix descriptor
     int descA_local[9], descB_local[9], descC_local[9];
@@ -92,7 +97,7 @@ int main(int argc, char **argv)
         B_global = new double[N * N];
         C_global = new double[N * N];
         C1_global = new double[N * N];
-
+/*
         for (int i = 0; i < N; ++i)
         {
             for (int j = 0; j < N; ++j)
@@ -102,6 +107,12 @@ int main(int argc, char **argv)
                 A_global[i + N * j] = (i + N * j) + 1;         // 1 2 3 ...
                 B_global[i + N * j] = 1.0 / ((i + N * j) + 1); // 1/1 1/2 1/3 1/4 ...
             }
+        }
+*/
+        for (int k = 0; k < N * N; k++)
+        {
+            A_global[k] = dist(rng) - 0.5;
+            B_global[k] = dist(rng) - 0.5;
         }
         start = std::chrono::high_resolution_clock::now();
         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0, A_global, N, B_global, N, 0.0, C1_global, N);
@@ -126,17 +137,20 @@ int main(int argc, char **argv)
     ScatterMatrix(context, B_global, M, N, MB, NB, B_local, localrows, localcols, myprow, mypcol, nprow, npcol);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time_Global = duration.count() * 1.e-9;
-    cout << "\nScatter time:" << elapsed_time_Global << " sec.\n";
+    elapsed_time_Scatter = duration.count() * 1.e-9;
+    cout << "\nScatter time:" << elapsed_time_Scatter << " sec.\n";
+
+    int ipiv[N];
 
     // Perform the matrix multiplication using pdgemm
     start = std::chrono::high_resolution_clock::now();
     pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
-    //pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    // Solver
+    //pdgesv_(&N, &N, A_local, &uno, &uno, descA_local, ipiv, B_local, &uno, &uno, descB_local, &info);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time_Global = duration.count() * 1.e-9;
-    cout << "\nScalapack pdgemm of Rank:"<< rank <<", time:" << elapsed_time_Global << " sec.\n";
+    elapsed_time_Paralel = duration.count() * 1.e-9;
+    cout << "\nScalapack pdgemm of Rank:" << rank << ", time:" << elapsed_time_Paralel << " sec.\n";
 
     /*
     if (rank == dime)
@@ -150,15 +164,21 @@ int main(int argc, char **argv)
     CollectMatrix(context, C_global, M, N, MB, NB, C_local, localrows, localcols, myprow, mypcol, nprow, npcol);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time_Global = duration.count() * 1.e-9;
-    cout << "\nCollect time:" << elapsed_time_Global << " sec.\n";
+    elapsed_time_Collect = duration.count() * 1.e-9;
+    cout << "\nCollect time:" << elapsed_time_Collect << " sec.\n";
 
     if (rank == 0)
     {
+        cout << "\nPDGEMM + Collect time:" << elapsed_time_Paralel << " sec.\n"; 
+        cout << "\nSpeed-UP:" << elapsed_time_Global/(elapsed_time_Paralel) << "x.\n"; 
+        
+        
         double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
-        //std::cout << "Collected Matrix:" << std::endl;
-        //PrintColMatrix(C_global, M, N);
-        std::cout << "Collected Error:" << C_error << std::endl;
+        double C_residual = InfinityNorm_Error_diff(C1_global, C_global, N, N);
+        // std::cout << "Collected Matrix:" << std::endl;
+        // PrintColMatrix(C_global, M, N);
+        std::cout << "\nCollected FWD Error: " << C_error << std::endl;
+        std::cout << "\nCollected residual Error: " << C_residual << std::endl;
     }
 
     // Deallocate memory and finalize BLACS
