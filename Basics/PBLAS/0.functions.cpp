@@ -732,6 +732,21 @@ double Fwd_Error_diff(double *matrixA, double *matrixB, int m, int n)
 
     return residual_norm/(A_norm*B_norm*epsilon);
 }
+double InfinityNorm_Error_diff(double *matrixA, double *matrixB, int m, int n)
+{
+    double epsilon = double_machine_epsilon();
+    double *matrixResidual = (double *)malloc(m * n * sizeof(double));
+    double residual_norm,A_norm,B_norm;
+    for (int i = 0; i < m*n; i++)
+    {
+        matrixResidual[i] = matrixA[i] - matrixB[i];
+    }
+    
+    residual_norm = InfinityNorm(matrixResidual,m);
+
+    return residual_norm;
+}
+
 void ErrorCalc_Display(double *matrixA, double *matrixB, double *matrixX, long double elapsed_time, int n, int p)
 {
     double *CalculatedB = (double *)malloc(n * p * sizeof(double));
