@@ -21,7 +21,7 @@
                 //"-lfftw3",
                 "-lm",
                 "-lscalapack",
-                //"-lblas",
+                //"-lblas", 
                 "-lopenblas",
                 //"-llapack",
                 "-llapacke",
