@@ -7,35 +7,35 @@
 #include <fstream>
 #include <random>
 #include "scalapack.h"
-#include "JBG_BLAS.h"
+#include "JBG_BLAS.s.h"
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
+    if (argc != 3)
     {
-        std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block) dime (what process local info to show)" << std::endl;
-        //std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block)" << std::endl;
+        // std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block) dime (what process local info to show)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " N (Dimension of Matrix)  NB (Dimension of Block)" << std::endl;
         return 1;
     }
     // Create a random number generator =>  Get a Seed from random device
     
     int seed = 13;
     std::mt19937_64 rng(seed);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    std::uniform_real_distribution<float> dist(0.0, 1.0);
 
     int N = std::atoi(argv[1]);  // Matrix size (N x N)
     int NB = std::atoi(argv[2]); // Matrix block (NB x NB)
-    int dime = std::atoi(argv[3]);
+    // int dime = std::atoi(argv[3]);
     int M = N;
     int MB = NB;
 
     // constants
     char transa = 'N';
     char transb = 'N';
-    double alpha = 1.0;
-    double beta = 0.0;
+    float alpha = 1.0;
+    float beta = 0.0;
     int uno = 1;
     int zero = 0;
     int info, context, nprow, npcol, myprow, mypcol, localrows, localcols;
@@ -72,14 +72,14 @@ int main(int argc, char **argv)
     cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:" << myprow << ", mycol:" << mypcol << " \n";
 
     // Allocate memory for the local matrices
-    double *A_local = new double[localrows * localcols];
-    double *B_local = new double[localrows * localcols];
-    double *C_local = new double[localrows * localcols];
+    float *A_local = new float[localrows * localcols];
+    float *B_local = new float[localrows * localcols];
+    float *C_local = new float[localrows * localcols];
 
-    double *A_global = nullptr;  //= new double[N * N];
-    double *B_global = nullptr;  // new double[N * N];
-    double *C_global = nullptr;  // new double[N * N];
-    double *C1_global = nullptr; // new double[N * N];
+    float *A_global = nullptr;  //= new float[N * N];
+    float *B_global = nullptr;  // new float[N * N];
+    float *C_global = nullptr;  // new float[N * N];
+    float *C1_global = nullptr; // new float[N * N];
 
     // Local matrix descriptor
     int descA_local[9], descB_local[9], descC_local[9];
@@ -93,10 +93,10 @@ int main(int argc, char **argv)
     // Initialize the global matrices on the root process
     if (rank == 0)
     {
-        A_global = new double[N * N];
-        B_global = new double[N * N];
-        C_global = new double[N * N];
-        C1_global = new double[N * N];
+        A_global = new float[N * N];
+        B_global = new float[N * N];
+        C_global = new float[N * N];
+        C1_global = new float[N * N];
 /*
         for (int i = 0; i < N; ++i)
         {
@@ -115,20 +115,20 @@ int main(int argc, char **argv)
             B_global[k] = dist(rng) - 0.5;
         }
         start = std::chrono::high_resolution_clock::now();
-        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0, A_global, N, B_global, N, 0.0, C1_global, N);
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0, A_global, N, B_global, N, 0.0, C1_global, N);
         stop = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
         elapsed_time_Global = duration.count() * 1.e-9;
         cout << "\nCblas dgemm time:" << elapsed_time_Global << " sec.\n";
 
         // Print Global Matrix A and B
-        //cout << "GLOBAL A:\n";
-        //PrintColMatrix(A_global, N, N);
-        //cout << "GLOBAL B:\n";
-        //PrintColMatrix(B_global, N, N);
-        //cout << "GLOBAL AxB=C1:\n";
-        //PrintColMatrix(C1_global, N, N);
-        
+        /*cout << "GLOBAL A:\n";
+        PrintColMatrix(A_global, N, N);
+        cout << "GLOBAL B:\n";
+        PrintColMatrix(B_global, N, N);
+        cout << "GLOBAL AxB=C1:\n";
+        PrintColMatrix(C1_global, N, N);
+        */
     }
 
     // Scatter the global Matrices into the different local processors with 2D block Cyclic
@@ -138,34 +138,34 @@ int main(int argc, char **argv)
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Scatter = duration.count() * 1.e-9;
-    //cout << "\nScatter time:" << elapsed_time_Scatter << " sec.\n";
+    cout << "\nScatter time:" << elapsed_time_Scatter << " sec.\n";
 
     // int ipiv[N];
         
     // Perform the matrix multiplication using pdgemm
     start = std::chrono::high_resolution_clock::now();
-    pdgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
+    psgemm_(&transa, &transb, &N, &N, &N, &alpha, A_local, &uno, &uno, descA_local, B_local, &uno, &uno, descB_local, &beta, C_local, &uno, &uno, descC_local);
     // Solver
     //pdgesv_(&N, &N, A_local, &uno, &uno, descA_local, ipiv, B_local, &uno, &uno, descB_local, &info);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Paralel = duration.count() * 1.e-9;
-    //cout << "\nScalapack pdgemm of Rank:" << rank << ", time:" << elapsed_time_Paralel << " sec.\n";
+    cout << "\nScalapack pdgemm of Rank:" << rank << ", time:" << elapsed_time_Paralel << " sec.\n";
     
-    
+    /*
     if (rank == dime)
     {
         cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:" << myprow << ", mycol:" << mypcol << " \n";
-        //std::cout << "Scattered Local C Matrix:" << std::endl;
-        //PrintColMatrix(C_local, localrows, localcols);
+        std::cout << "Scattered Local C Matrix:" << std::endl;
+        PrintColMatrix(C_local, localrows, localcols);
     }
-    
+    */
     start = std::chrono::high_resolution_clock::now();
     CollectMatrix(context, C_global, M, N, MB, NB, C_local, localrows, localcols, myprow, mypcol, nprow, npcol);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time_Collect = duration.count() * 1.e-9;
-    //cout << "\nCollect time:" << elapsed_time_Collect << " sec.\n";
+    cout << "\nCollect time:" << elapsed_time_Collect << " sec.\n";
 
     if (rank == 0)
     {
@@ -173,8 +173,8 @@ int main(int argc, char **argv)
         cout << "\nSpeed-UP:" << elapsed_time_Global/(elapsed_time_Paralel) << "x.\n"; 
         
         
-        double C_error = Fwd_Error_diff(C1_global, C_global, N, N);
-        double C_residual = InfinityNorm_Error_diff(C1_global, C_global, N, N);
+        float C_error = Fwd_Error_diff(C1_global, C_global, N, N);
+        float C_residual = InfinityNorm_Error_diff(C1_global, C_global, N, N);
         // std::cout << "Collected Matrix:" << std::endl;
         // PrintColMatrix(C_global, M, N);
         std::cout << "\nCollected FWD Error: " << C_error << std::endl;
