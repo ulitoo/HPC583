@@ -4,12 +4,13 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/",
-                "/usr/lib/x86_64-linux-gnu/openmpi/include/**",
-                "/home/ulitoo/Capstone/"
+                "/usr/include/**",
+                "/usr/local/include/**",
+                "/home/ulitoo/"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/mpic++",
+            "compilerPath": "/usr/local/bin/mpic++",
+            //"compilerPath": "/usr/bin/g++",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
