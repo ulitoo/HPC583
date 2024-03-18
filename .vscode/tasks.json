@@ -3,8 +3,8 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            //"command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
-            "command": "/usr/local/bin/mpic++",            
+            "command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
+            //"command": "/usr/local/bin/mpic++",            
             //"command": "/usr/bin/g++",
             "args": [
                 //"-fdiagnostics-color=always", //REMOVE FOR CUDA COMPILER
@@ -14,7 +14,7 @@
                 // include a file_f.cpp file with all functions
                 //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
                 // include 0.functions.cpp
-                "${fileDirname}/0.functions.cpp", 
+                //"${fileDirname}/0.functions.cpp", 
                 //"-arch", "sm_61", // CUDA 6.1 nvidia architecture
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
