@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     if (rank == dime)
     {
         cout << "\nIn RANK: " << rank << " , nprow:" << nprow << " npcol:" << npcol << ":: Also :: localrows:" << localrows << " and localcols:" << localcols << " myrow:" << myprow << ", mycol:" << mypcol << " \n";
-        //std::cout << "Scattered Local C Matrix:" << std::endl;
+        //  std::cout << "Scattered Local C Matrix:" << std::endl;
         //PrintColMatrix(C_local, localrows, localcols);
     }
     
@@ -169,7 +169,8 @@ int main(int argc, char **argv)
 
     if (rank == 0)
     {
-        cout << "\nPDGEMM + Collect time:" << elapsed_time_Paralel << " sec.\n"; 
+        cout << "\nPDGEMM time:" << elapsed_time_Paralel << " sec.\n"; 
+        cout << "\nCollect time:" << elapsed_time_Collect<< " sec.\n"; 
         cout << "\nSpeed-UP:" << elapsed_time_Global/(elapsed_time_Paralel) << "x.\n"; 
         
         
