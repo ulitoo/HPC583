@@ -3,9 +3,9 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
+            //"command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
             //"command": "/usr/local/bin/mpic++",            
-            //"command": "/usr/bin/g++",
+            "command": "/usr/bin/g++",
             "args": [
                 //"-fdiagnostics-color=always", //REMOVE FOR CUDA COMPILER
                 //"-g",
