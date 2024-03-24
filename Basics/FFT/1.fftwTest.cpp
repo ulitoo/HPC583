@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 int main() {
-    // Define the size of the input signal
+    // Define the size of the input signal. 2024
     int N = 128;
     printf("DFT Hola\n");
     fftw_complex *in, *out;
