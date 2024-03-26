@@ -4,8 +4,8 @@
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
             //"command": "/usr/bin/nvcc",  //Nvidia Compiler
-            //"command": "/usr/local/bin/mpic++",            
-            "command": "/usr/bin/g++",
+            "command": "/usr/local/bin/mpic++",            
+            //"command": "/usr/bin/g++",
             "args": [
                 //"-fdiagnostics-color=always", //REMOVE FOR CUDA COMPILER
                 //"-g",
@@ -21,11 +21,9 @@
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lfftw3",
                 "-lm",
-                //"-lscalapack",
-                //"-lblas", 
+                //"-lblas", "-llapack","-llapacke", // All included now in libopenblas
+                "-lscalapack",
                 "-lopenblas",
-                //"-llapack",
-                //"-llapacke",
                 "-lpthread",
                 "-lgfortran"
                 //"-lcublas",       //CUDA and NVIDIA GPU
