@@ -30,6 +30,49 @@ __global__ void dotproductGPU(float *a, float *b, float *c, int size)
     }
 }
 
+__global__ void finitesum_GPU(float *a, float *c, int size)
+{
+    __shared__ float temp[MI_BLOCKSIZE];
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int localIndex = threadIdx.x;
+    temp[localIndex] = a[tid];
+    __syncthreads();
+    // Store the result in c Collecting from all Blocks with Atomic Add
+    if (localIndex == 0)
+    {
+        float sum = 0;
+        for (int i = 0; i < MI_BLOCKSIZE; i++)
+        {
+            sum += temp[i]; 
+        }
+        atomicAdd(c,sum);
+    }
+}
+
+void init_sum(float *a, float r,int n)
+{
+        for (int i = 0; i < n; i++)
+        {
+            a[i]=std::pow(r,i); 
+        }
+}
+
+float finitesum_CPU(float *a, int n)
+{
+        float sum=0;
+        for (int i = 0; i < n; i++)
+        {
+            sum += a[i]; 
+        }
+        return sum;
+}
+
+float finitesum_exact(float r, int n)
+{
+
+    return ((1-std::pow(r,n))/(1-r));
+}
+
 float dotproductCPU(float *a, float *b, int size)
 {
     float dot = 0.0;
@@ -42,12 +85,13 @@ float dotproductCPU(float *a, float *b, int size)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cerr << "Usage of Dot Product: " << argv[0] << " n (Dimension of vector)" << std::endl;
+        std::cerr << "Usage of Finite SUM " << argv[0] << " 1/r (factor) n (Dimension)" << std::endl;
         return 1;
     }
-    const int size = std::atoi(argv[1]);
+    const float r = 1.0 / (float)std::atoi(argv[1]);
+    const int size = std::atoi(argv[2]);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
@@ -58,33 +102,24 @@ int main(int argc, char *argv[])
     std::mt19937_64 rng(13);
     std::uniform_real_distribution<double> dist(0.0, 1.0); 
 
-    float dotCPU = 0.0;
     float *a = new float[size];
-    float *b = new float[size];
     float *c_gpu = new float[1];
 
-
-    for (int i = 0; i < size; ++i)
-    {
-        a[i] = dist(rng) - 0.5;
-        b[i] = dist(rng) - 0.5;
-    }
+    init_sum (a,r,size);
+    float sum_exact = finitesum_exact(r,size); 
 
     float *dev_a;
-    float *dev_b;
     float *dev_c;
     cudaMalloc((void **)&dev_a, size * sizeof(float));
-    cudaMalloc((void **)&dev_b, size * sizeof(float));
     cudaMalloc((void **)&dev_c, sizeof(float));
 
     //start = std::chrono::high_resolution_clock::now();
     cudaMemcpy(dev_a, a, size * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_b, b, size * sizeof(float), cudaMemcpyHostToDevice);
 
     int blockSize = MI_BLOCKSIZE;
     int gridSize = (size + blockSize - 1) / blockSize;
     start = std::chrono::high_resolution_clock::now();
-    dotproductGPU<<<gridSize, blockSize>>>(dev_a, dev_b, dev_c, size);
+    finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
     //stop = std::chrono::high_resolution_clock::now();
     cudaMemcpy(c_gpu, dev_c, sizeof(float), cudaMemcpyDeviceToHost);
     stop = std::chrono::high_resolution_clock::now();
@@ -93,11 +128,10 @@ int main(int argc, char *argv[])
     std::cout << "GPU time:" << elapsed_time << std::endl;
 
     cudaFree(dev_a);
-    cudaFree(dev_b);
     cudaFree(dev_c);
 
     start = std::chrono::high_resolution_clock::now();
-    dotCPU = dotproductCPU(a, b, size);
+    float sum_CPU = finitesum_CPU(a,size);
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     elapsed_time2 = duration.count() * 1.e-9;
@@ -105,21 +139,10 @@ int main(int argc, char *argv[])
     std::cout << "GPU speedup is x" << elapsed_time2 / elapsed_time << std::endl;
     std::cout << "GRIDSIZE:" << gridSize << std::endl;
 
-    std::cout << "GPU results:" << c_gpu[0] << " / CPU results: " << dotCPU << std::endl;
-
-    bool resultsMatch = (dotCPU - c_gpu[0]) < 1.0;
- 
-    if (resultsMatch)
-    {
-        std::cout << "GPU results match CPU results : " << dotCPU << std::endl;
-    }
-    else
-    {
-        std::cout << "GPU :(" << c_gpu[0] << ") do NOT!!!!! match CPU results : " << dotCPU << std::endl;
-    }
+    std::cout << "Exact results:" << sum_exact << " / GPU results: " << c_gpu[0] << " / CPU results: " << sum_CPU << std::endl;
+    std::cout << "diff CPU:" << sum_exact-sum_CPU << " / diff GPU: " << sum_exact-c_gpu[0] << std::endl;
 
     delete[] a;
-    delete[] b;
     delete[] c_gpu;
 
     return 0;

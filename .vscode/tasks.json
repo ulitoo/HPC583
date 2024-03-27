@@ -24,12 +24,12 @@
                 //"-lblas", "-llapack","-llapacke", // All included now in libopenblas
                 "-lscalapack",
                 "-lopenblas",
-                "-lpthread",
                 "-lgfortran",
                 "-lcublas",       //CUDA and NVIDIA GPU
                 "-lcusolver",     //CUDA and NVIDIA GPU
                 "-lcudart"       //CUDA and NVIDIA GPU
                 //"-lmagma",        //CUDA and NVIDIA GPU
+                //"-lpthread",
                 //"-lboost_iostreams"
             ],
             "options": {
