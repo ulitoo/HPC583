@@ -28,7 +28,7 @@ __global__ void dot_product(float *a, float *b, float *result) {
     }
 }
 
-__global__ void sum_kernel(int nvalues, double nThreads, double *values)
+__global__ void sum_kernel(int nvalues, double nThreads, double *values)  // WRONG usage of reduction. Tries GRID WIDE REDUCT
 {   int i = blockIdx.x * blockDim.x + threadIdx.x;
     while (nThreads > 1)
     {   int middle = nThreads / 2;
