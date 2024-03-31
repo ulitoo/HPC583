@@ -14,7 +14,7 @@
                 // include a file_f.cpp file with all functions
                 //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
                 // include general functions file functions.cpp
-                "${fileDirname}/0.CUDA_functions.cu", 
+                //"${fileDirname}/0.CUDA_functions.cu", 
                 //"-arch", "sm_61", // CUDA 6.1 nvidia architecture Pascal
                 "-arch", "sm_50", // CUDA 5.0 nvidia architecture Maxwell
                 "-o",
@@ -28,7 +28,7 @@
                 "-lcublas",       //CUDA and NVIDIA GPU
                 "-lcusolver",     //CUDA and NVIDIA GPU
                 "-lcudart"       //CUDA and NVIDIA GPU
-                //"-lmagma",        //CUDA and NVIDIA GPU
+                //"-lmagma"        //CUDA and NVIDIA GPU
                 //"-lpthread",
                 //"-lboost_iostreams"
             ],

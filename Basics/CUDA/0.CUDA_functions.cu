@@ -32,6 +32,13 @@ void init_sum(float *a, float r,int n)
             a[i]=std::pow(r,i); 
         }
 }
+void init_sum2(float *a, float r,int n)
+{
+        for (int i = 0; i < n; i++)
+        {
+            a[i]=(float)i; 
+        }
+}
 
 float finitesum_CPU(float *a, int n)
 {
