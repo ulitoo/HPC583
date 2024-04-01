@@ -7,37 +7,6 @@
 #define MI_BLOCKSIZE 256
 using namespace std;
 
-__global__ void reduce0(float *g_idata, float *g_odata)
-{
-    extern __shared__ float sdata[];
-    // each thread loads one element from global to shared mem
-    unsigned int tid = threadIdx.x;
-    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-    sdata[tid] = g_idata[i];
-    //printf("%f ",sdata[tid]);
-    //printf("%d ",blockDim.x);
-    __syncthreads();
-    printf("%f ",sdata[tid]);
-    //printf("%f ",g_idata[i]);
-    // do reduction in shared mem
-    for (unsigned int s = 1; s < blockDim.x; s *= 2)
-    {
-        //printf("%d - ",s);
-        if (tid % (2 * s) == 0)
-        {
-            sdata[tid] += sdata[tid + s];
-            //printf("%f",sdata[tid]);
-            //printf("%d - ",s);
-        }
-        __syncthreads();
-    }
-    // write result for this block to global mem
-    
-    if (tid == 0)
-        {g_odata[blockIdx.x] = sdata[0];
-        //printf("%f\n",sdata[0]);
-        }
-}
 
 int main(int argc, char *argv[])
 {
@@ -48,11 +17,12 @@ int main(int argc, char *argv[])
     }
     const float r = 1.0 / (float)std::atoi(argv[1]);
     const int size = std::atoi(argv[2]);
-
-    auto start = std::chrono::high_resolution_clock::now();
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    long double elapsed_time, elapsed_time2;
+	
+    // --- Creating events for timing
+	float elapsed_timeGPU, elapsed_timeCPU;
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
 
     // Create a random number generator =>  Get a Seed from random device
     std::mt19937_64 rng(13);
@@ -60,57 +30,50 @@ int main(int argc, char *argv[])
 
     float *a = new float[size];
 
-    init_sum2 (a,r,size);
+    init_sum(a,r,size);
     float sum_exact = finitesum_exact(r,size); 
 
     float *dev_a;
     float *dev_c;
     cudaMalloc((void **)&dev_a, size * sizeof(float));
-
-    //start = std::chrono::high_resolution_clock::now();
     cudaMemcpy(dev_a, a, size * sizeof(float), cudaMemcpyHostToDevice);
 
     int blockSize = MI_BLOCKSIZE;
     int gridSize = (size + blockSize - 1) / blockSize;
     cudaMalloc((void **)&dev_c, gridSize * sizeof(float));
     float *c_gpu = new float[gridSize];
-
-    start = std::chrono::high_resolution_clock::now();
+ 
     
+    cudaEventRecord(start, 0);
     ///////////////////////////////////////////////////////////////////////////////
     //finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
-    reduce0<<<gridSize, blockSize>>>(dev_a, dev_c);
-    //printf("%f",dev_c[0]);
+    reduce2<<<gridSize, blockSize, blockSize * sizeof(float)>>>(dev_a, dev_c);
     ///////////////////////////////////////////////////////////////////////////////
-
-    //stop = std::chrono::high_resolution_clock::now();
+	cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&elapsed_timeGPU, start, stop);
+	printf("GPU Reduce0 - Elapsed time:  %3.3f ms.", elapsed_timeGPU);	
     cudaMemcpy(c_gpu, dev_c, gridSize * sizeof(float), cudaMemcpyDeviceToHost);
     
-    for (unsigned int k = 0; k < 1; k++)
-    {
-        std::cout<< c_gpu[k] << " *** ";
-        //std::cout<< a[k] << " ";
-    }
-    
-    stop = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time = duration.count() * 1.e-9;
-    std::cout << "GPU time:" << elapsed_time << std::endl;
+    float GPUfinalsum = kahanSum (c_gpu,gridSize);
 
     cudaFree(dev_a);
     cudaFree(dev_c);
 
-    start = std::chrono::high_resolution_clock::now();
+    cudaEventRecord(start, 0);
     float sum_CPU = finitesum_CPU(a,size);
-    stop = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    elapsed_time2 = duration.count() * 1.e-9;
-    std::cout << "CPU time:" << elapsed_time2 << std::endl;
-    std::cout << "GPU speedup is x" << elapsed_time2 / elapsed_time << std::endl;
+    cudaEventRecord(stop, 0);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&elapsed_timeCPU, start, stop);
+	printf("\nCPU Reduce - Elapsed time:  %3.3f ms \n", elapsed_timeCPU);	
+
+    std::cout << "GPU speedup is x" << elapsed_timeCPU / elapsed_timeGPU << std::endl;
     std::cout << "GRIDSIZE:" << gridSize << std::endl;
 
-    std::cout << "Exact results:" << sum_exact << " / GPU results: " << c_gpu[0] << " / CPU results: " << sum_CPU << std::endl;
-    std::cout << "diff CPU:" << sum_exact-sum_CPU << " / diff GPU: " << sum_exact-c_gpu[0] << std::endl;
+    std::cout << "Exact results:" << sum_exact << " / GPU results: " << GPUfinalsum << " / CPU results: " << sum_CPU << std::endl;
+    //std::cout << "GPU results: " << GPUfinalsum << " / CPU results: " << sum_CPU << std::endl;
+    std::cout << "diff CPU:" << sum_exact-sum_CPU << " / diff GPU: " << sum_exact-GPUfinalsum << std::endl;
+    //std::cout << "Diff /CPU-GPU/:" << GPUfinalsum-sum_CPU << "\n";
 
     delete[] a;
     delete[] c_gpu;

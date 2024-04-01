@@ -1,6 +1,6 @@
-//#include "\usr\include\thrust\device_vector.h"
-#include <thrust\device_vector.h>
-//#include <device_vector.h>
+
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 #define BLOCKSIZE 256
 
