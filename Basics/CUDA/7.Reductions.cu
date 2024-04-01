@@ -1,4 +1,11 @@
 
+
+/********************/
+/* EXAMPLE FROM CUDA NVIDIA PAGE */
+// https://github.com/NVIDIA/cuda-samples/tree/master/Samples/2_Concepts_and_Techniques/reduction
+/********************/
+
+
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
