@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     // Create a random number generator =>  Get a Seed from random device
     std::mt19937_64 rng(13);
-    std::uniform_real_distribution<double> dist(0.0, 1.0); 
+    std::uniform_real_distribution<float> dist(0.0, 1.0); 
 
     float *a = new float[size];
 
@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     
     cudaEventRecord(start, 0);
     ///////////////////////////////////////////////////////////////////////////////
-    finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
-    //reduce2<<<gridSize, blockSize, blockSize * sizeof(float)>>>(dev_a, dev_c);
+    //finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
+    reduce2<<<gridSize, blockSize, blockSize * sizeof(float)>>>(dev_a, dev_c);
     ///////////////////////////////////////////////////////////////////////////////
 	cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     cudaFree(dev_c);
 
     cudaEventRecord(start, 0);
-    float sum_CPU = finitesum_CPU(a,size);
+    float sum_CPU = kahanSum(a,size);
     cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&elapsed_timeCPU, start, stop);
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     std::cout << "Exact results:" << sum_exact << " / GPU results: " << GPUfinalsum << " / CPU results: " << sum_CPU << std::endl;
     //std::cout << "GPU results: " << GPUfinalsum << " / CPU results: " << sum_CPU << std::endl;
     std::cout << "diff CPU:" << sum_exact-sum_CPU << " / diff GPU: " << sum_exact-GPUfinalsum << std::endl;
-    //std::cout << "Diff /CPU-GPU/:" << GPUfinalsum-sum_CPU << "\n";
+    std::cout << "Diff /CPU-GPU/:" << GPUfinalsum-sum_CPU << "\n";
 
     delete[] a;
     delete[] c_gpu;
