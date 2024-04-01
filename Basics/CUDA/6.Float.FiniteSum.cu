@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
     
     cudaEventRecord(start, 0);
     ///////////////////////////////////////////////////////////////////////////////
-    //finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
-    reduce2<<<gridSize, blockSize, blockSize * sizeof(float)>>>(dev_a, dev_c);
+    finitesum_GPU<<<gridSize, blockSize>>>(dev_a, dev_c, size);
+    //reduce2<<<gridSize, blockSize, blockSize * sizeof(float)>>>(dev_a, dev_c);
     ///////////////////////////////////////////////////////////////////////////////
 	cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);
