@@ -7,7 +7,7 @@ G = 6.67430e-11  # gravitational constant, m^3 kg^-1 s^-2
 m_sun = 1.989e30  # mass of the Sun, kg
 m_earth = 5.972e24  # mass of the Earth, kg
 r_earth = 1.496e11  # average distance from the Earth to the Sun, m
-v_earth = 29500  # average orbital speed of the Earth, m/s
+v_earth = 9500  # average orbital speed of the Earth, m/s
 #v_earth = 29780  # average orbital speed of the Earth, m/s
 
 # There is a PRECESION due to calculation errors, how to minimize? (reduce the steps when acceleration and velocity is big?)
@@ -137,7 +137,7 @@ ax.plot(0, 0, 'ro', markersize=10, label='Sun')
 earth, = ax.plot([], [], 'bo', markersize=5, label='Earth')
 
 # Plot the trail
-trail, = ax.plot([], [], 'b--', alpha=0.3, label='Trail')
+trail, = ax.plot([], [], 'g--', alpha=0.3, label='Trail')
 
 # Plot legend
 ax.legend()
