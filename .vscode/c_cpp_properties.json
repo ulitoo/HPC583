@@ -4,8 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/**",
                 "/usr/local/include/**",
+                "/usr/include/**",
+                "/usr/include/thrust/*",
                 "/home/ulitoo/"
             ],
             "defines": [],
@@ -16,7 +17,7 @@
             "intelliSenseMode": "linux-gcc-x64",
             "browse": {
                 "path": [
-                    "/usr/include/*"
+                    "/usr/include/**"
                 ]
             }
         }

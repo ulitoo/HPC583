@@ -1,8 +1,9 @@
-#include <iostream>
+//#include <iostream>
 #include <complex>
 #include <vector>
 #include <cmath>
 #include "gnuplot-iostream.h" // Gnuplot C++ interface
+#include <boost/filesystem.hpp>
 
 int main() {
     // Initialize Gnuplot

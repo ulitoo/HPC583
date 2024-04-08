@@ -3,8 +3,8 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            //"command": "/usr/local/cuda-12.3/bin/nvcc",  //Nvidia Compiler
-            "command": "/usr/local/bin/mpic++",            
+            "command": "/usr/bin/nvcc",  //Nvidia Compiler
+            //"command": "/usr/local/bin/mpic++",            
             //"command": "/usr/bin/g++",
             "args": [
                 //"-fdiagnostics-color=always", //REMOVE FOR CUDA COMPILER
@@ -13,24 +13,23 @@
                 "${file}",
                 // include a file_f.cpp file with all functions
                 //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
-                // include 0.functions.cpp
-                "${fileDirname}/0.functions.cpp", 
-                //"-arch", "sm_61", // CUDA 6.1 nvidia architecture
+                // include general functions file functions.cpp
+                "${fileDirname}/0.CUDA_functions.cu", 
+                //"-arch", "sm_61", // CUDA 6.1 nvidia architecture Pascal
+                "-arch", "sm_50", // CUDA 5.0 nvidia architecture Maxwell
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                //"-lfftw3",
+                "-lfftw3",
                 "-lm",
+                //"-lblas", "-llapack","-llapacke", // All included now in libopenblas
                 "-lscalapack",
-                //"-lblas", 
                 "-lopenblas",
-                //"-llapack",
-                //"-llapacke",
+                "-lgfortran",
+                "-lcublas",       //CUDA and NVIDIA GPU
+                "-lcusolver",     //CUDA and NVIDIA GPU
+                "-lcudart"       //CUDA and NVIDIA GPU
+                //"-lmagma"        //CUDA and NVIDIA GPU
                 //"-lpthread",
-                "-lgfortran"
-                //"-lcublas",       //CUDA and NVIDIA GPU
-                //"-lcusolver",     //CUDA and NVIDIA GPU
-                //"-lcudart",       //CUDA and NVIDIA GPU
-                //"-lmagma",        //CUDA and NVIDIA GPU
                 //"-lboost_iostreams"
             ],
             "options": {

@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         cout << "Matrix writing time:" << elapsed_time_mine << "\n";
 
         // ------------- Poke holes on the diagonal
-        
+        /*
         for (int k = 0; k < n; k++)
         {
             for (int j = 0; j < n; j++)
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
                     
             }
         }
-        
+        */
         // ------------- Create a singular matrix , Row 0 and Row 1 is the same for A
         // ------------- Perturbate with n times epsilon 
         /*
