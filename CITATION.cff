@@ -1,0 +1,21 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Julio Barrientos Capstone PHYS 600
+message: >-
+  This is the software along the UW PHYS600 Masters degree
+  capstone
+type: software
+authors:
+  - given-names: 'Julio '
+    family-names: Barrientos
+    email: ulitoo@outlook.com
+    name-particle: Julio
+    affiliation: Univerity of Washington
+repository-code: 'https://github.com/ulitoo/HPC583'
+url: 'https://github.com/ulitoo/HPC583'
+abstract: >+
+  This is the repository for the UW Physics Masters Degree
+  Capstone 
+
