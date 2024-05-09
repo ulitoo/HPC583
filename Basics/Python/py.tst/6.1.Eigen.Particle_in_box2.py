@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 #h_bar = 1   # Reduced Planck constant (arbitrary units)
 #m = 3       # Particle mass (arbitrary units)
 #L = 2       # Width of the well (arbitrary units)
-N = 100     # Number of grid points
+N = 5     # Number of grid points
 m = 9.1094e-31     # Mass of electron (kg)
 h_bar = 1.0546e-34  # Planck's constant over 2*pi (J.s)
 e = 1.6022e-19     # Electron charge (C)
@@ -21,6 +21,8 @@ def numerical_eigenvalues(N):
     # Discretization
     x = np.linspace(0, L, N)
     dx = x[1] - x[0]
+    
+    print(x)
 
     # Constructing the Hamiltonian matrix
     H = np.zeros((N, N))
@@ -29,7 +31,7 @@ def numerical_eigenvalues(N):
         H[i, i - 1] = 1 / dx**2
         H[i, i + 1] = 1 / dx**2
 
-    sp.pprint(H)
+
     plt.imshow(H, cmap='viridis', interpolation='nearest')
     plt.colorbar()
     #plt.show()
@@ -37,6 +39,7 @@ def numerical_eigenvalues(N):
     # Applying boundary conditions
     H[0, 0] = 1 / dx**2
     H[N - 1, N - 1] = 1 / dx**2
+    sp.pprint(H)
 
     # Solve the eigenvalue problem
     E, _ = np.linalg.eigh(H)
