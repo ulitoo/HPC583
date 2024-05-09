@@ -1,4 +1,6 @@
-# HPC583 UW Capstone PHYS 600 
+# HPC583 UW Capstone PHYS 600
+
+## Inside **Basics** Directory:
 
 **LibTest**: Testing c++ Libraries for CUDA / Threads / MPI / fft3 / BLAS / LAPACK / SCALAPACK etc
 
