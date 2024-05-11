@@ -100,7 +100,7 @@ def update_earth_position_adaptive(dt):
     v = np.array([vx_earth, vy_earth])
     a = acceleration(r)
     # Estimate time step based on acceleration and velocity
-    dt_new = dt_initial / (np.linalg.norm(v)/(v_earth))  # Adjust scaling factor as needed wrt velicuty
+    dt_new = dt_initial / (np.linalg.norm(v)/(v_earth))  # Adjust scaling factor as needed wrt velocity
 
     # Update position using RK4 with the estimated time step
     k1r = v
