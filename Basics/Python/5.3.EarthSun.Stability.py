@@ -11,7 +11,7 @@ r_earth = 1.496e11  # average distance from the Earth to the Sun, m
 
 # Initial Velocity of the Earth. The lowest it is the closer it will fall into the sun reducing stability of the problem (higher velocity and acceleration)
 #v_earth = 9500  # Initial average orbital speed of the Earth, m/s -> take earth VERY near the sun
-v_earth = 10000  # Initial average orbital speed of the Earth, m/s -> take earth near the sun
+v_earth = 4000  # Initial average orbital speed of the Earth, m/s -> take earth near the sun
 #v_earth = 29780  # Initial average orbital speed of the Earth, m/s
 
 # There is a PRECESION due to calculation errors, how to minimize? (reduce the steps when acceleration and velocity is big?)
@@ -127,8 +127,8 @@ def update(frame):
     
     # UNCOMMENT The method of deriviative calculation naive / RK4 / RK4+Adapt
 
-    #dt = update_earth_position_adaptive(dt_initial)  # Initial guess for time step
-    update_earth_position()
+    dt = update_earth_position_adaptive(dt_initial)  # Initial guess for time step
+    #update_earth_position()
     #update_earth_position_rk4()
     
     trail.set_data(trail_x, trail_y)
