@@ -365,6 +365,7 @@ void LowerTriangularSolverRecursiveReal(double *matrixL, int L_n1, int L_n2, dou
 void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, double *matrixX, int n, int p)
 {
     // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
+    // UX=B
     recursion_count++;
     if (n==1)
     {
@@ -467,8 +468,11 @@ void UpperTriangularSolverRecursiveReal_0(double *matrixU, double *matrixB, doub
 void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, double *matrixX, int n, int p)
 {
     recursion_count++;
+    // This is a Naive version with Malloc and free as crutch to avoid index calculation over the original matrix
+    // LX=B
     //cout << " This is the iteration " << n << " x " << p << "\n"; // This Line is for debugging
     // PHASE 1: RECURSE on calculations based on TRIANGULAR L11
+
     if (n == 1)
     {   
         for (int j = 0; j < p; j++)
@@ -534,7 +538,7 @@ void LowerTriangularSolverRecursiveReal_0(double *matrixL, double *matrixB, doub
                 }
             }
         }
-        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR A22
+        // PHASE 3: RECURSE on REST of calculations with TRIANGULAR L22
         // Recurse L22 X21 = B21'
         LowerTriangularSolverRecursiveReal_0(L22,B21,X21,nn2,pp);
         //LowerTriangularSolverRecursiveReal(matrixL,L_n1+nn,L_n2+nn,matrixB,B_n1+nn,B_p1,matrixSol,major_n,nn2,pp);
