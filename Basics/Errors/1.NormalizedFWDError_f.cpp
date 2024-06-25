@@ -462,6 +462,9 @@ void SchurComplement2(double *matrix, int n)
 {
     // ONLY 1 matrix, rewrite A22 as S22 ! ; N is the original A size ; n is the size of A in the recursion; n-1 is size of A22
     // Without offset concept just 1 rank lower
+
+    // Using a BLAS implementation here like gemm will improve the perf.
+
     for (int i = 1; i < (n); i++)
     {
         for (int j = 1; j < (n); j++)
