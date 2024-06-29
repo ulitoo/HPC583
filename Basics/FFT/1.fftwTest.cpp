@@ -8,6 +8,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// This is the first DFT test
+
 int main() {
     // Define the size of the input signal. 2024
     int N = 128;
