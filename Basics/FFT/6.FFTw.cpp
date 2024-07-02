@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    int N = 2048 ;
+    int N = 128 ;
     // Initialize Gnuplot
     Gnuplot gp,gp1;
     fftw_complex *in, *out;
@@ -61,10 +61,11 @@ int main(int argc, char **argv)
 
     // Create a plan for the forward DFT
     //fftw_plan plan = fftw_plan_dft_r2c_1d(N, in, (fftw_complex*)out, FFTW_ESTIMATE);
-    start = std::chrono::high_resolution_clock::now();
+    //start = std::chrono::high_resolution_clock::now();
     
     fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-
+    start = std::chrono::high_resolution_clock::now();
+    
     // Calculate the FFT
     // Execute the plan to compute the DFT
     
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     long double elapsed_time = (duration.count() * 1.e-9);
-    std::cout << "Plan+FFT Time: " << elapsed_time << " s.\n" << std::endl;
+    std::cout << "NOPlan+FFT Time: " << elapsed_time << " s.\n" << std::endl;
 
     // Print the results
     for (int k = 0; k < N; k++)
