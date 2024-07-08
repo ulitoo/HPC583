@@ -5,6 +5,7 @@
 #include <cmath>
 #include "gnuplot-iostream.h" // Gnuplot C++ interface
 
+
 using namespace std::complex_literals;
 
 // Cooley-Tukey FFT algorithm
@@ -42,7 +43,7 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    int N = 8 ;
+    int N = 128 ;
     // Initialize Gnuplot
     Gnuplot gp,gp1;
 
@@ -106,11 +107,11 @@ int main(int argc, char **argv)
     gp1 << "set grid\n";
     //gp << "set multiplot layout 2,1 rowsfirst\n";
     //gp << "plot '-' with lines title 'sin(x)', '-' with lines title 'DFT'\n";
-    gp << "plot '-' with lines title 'sin(x)'\n";
+    gp << "plot '-' with lines title 'y(dt)'\n";
     gp.send(signal); // Send the data to Gnuplot
     //std::cout << "Press enter to continue." << std::endl;
     //std::cin.get();
-    gp1 << "plot '-' with lines title 'DFT'\n";
+    gp1 << "plot '-' with lines title 'FFT'\n";
     gp1.send(Fsignal);
     //gp << "unset multiplot\n";
 
