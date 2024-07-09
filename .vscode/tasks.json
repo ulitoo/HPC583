@@ -13,12 +13,12 @@
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
-                "-arch", "sm_50", // CUDA 5.0 nvidia architecture
+                "-arch", "sm_50",   // CUDA 5.0 nvidia architecture
                 "-lfftw3",
                 "-lm",
-                "-lcudart",
-                "-lcusolver",
-                "-lcublas",
+                "-lcudart",         // CUDA 
+                "-lcusolver",       // CUDA 
+                "-lcublas",         // CUDA 
                 "-lscalapack",
                 "-lopenblas",
                 "-lboost_iostreams",
