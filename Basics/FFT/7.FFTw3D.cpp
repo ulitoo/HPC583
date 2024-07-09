@@ -135,8 +135,8 @@ int main(int argc, char **argv)
         // Error as difference absoute values -> Its the same that the following because Im=0 in both
         errorabs += abs(sqrt(in[i][0]*in[i][0] + in[i][1]*in[i][1]) - sqrt(in_back[i][0]*in_back[i][0] + in_back[i][1]*in_back[i][1]));
         // Error only as cummulative of the real parts
-        error_Real += abs(in[i][0]-in_back[i][0]);
-
+        //error_Real += abs(in[i][0]-in_back[i][0]);
+        error_Real += abs(in[i]-in_back[i]);
     }
 
     std::cout << "\nFFT Sqr Error per point: " << (sqrt(errorsqr))/totalN <<"\n";
