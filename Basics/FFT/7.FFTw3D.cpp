@@ -121,7 +121,7 @@ int main(int argc, char **argv)
               << std::endl;
 
     // Normalize in_back after the Inverse FFT!!!!
-    normalize(in_back, totalN);
+    normalize(in_back, N*N*N);
 
     double errorabs = 0;
     double errorsqr = 0;
@@ -135,13 +135,14 @@ int main(int argc, char **argv)
         // Error as difference absoute values -> Its the same that the following because Im=0 in both
         errorabs += abs(sqrt(in[i][0]*in[i][0] + in[i][1]*in[i][1]) - sqrt(in_back[i][0]*in_back[i][0] + in_back[i][1]*in_back[i][1]));
         // Error only as cummulative of the real parts
+        //error_Real += abs(in[i][0]-in_back[i][0]);
         error_Real += abs(in[i][0]-in_back[i][0]);
 
     }
 
     std::cout << "\nFFT Sqr Error per point: " << (sqrt(errorsqr))/totalN <<"\n";
     std::cout << "FFT Abs Error per point: " << (errorabs)/totalN <<"\n";
-    std::cout << "FFT Real Error per point: " << error_Real/totalN <<"\n";
+    std::cout << "FFT Real Error per point: " << static_cast<double>(error_Real/totalN) <<"\n";
 
     // Clean up
     fftw_destroy_plan(plan);
