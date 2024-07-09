@@ -10,8 +10,9 @@
                 "/home/ulitoo/"
             ],
             "defines": [],
-            "compilerPath": "/usr/local/bin/mpic++",
+            //"compilerPath": "/usr/local/bin/mpic++",
             //"compilerPath": "/usr/bin/g++",
+            "compilerPath": "/usr/bin/nvcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",

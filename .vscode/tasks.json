@@ -3,7 +3,8 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
-            "command": "/usr/local/bin/mpic++",
+            "command": "/usr/bin/nvcc",
+            //"command": "/usr/local/bin/mpic++",
             "args": [
                 "-O3",
                 "${file}",
