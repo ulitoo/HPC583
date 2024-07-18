@@ -12,7 +12,8 @@
                 "${file}",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
+                "${fileDirname}/0.CUDA_functions.cu",
+                //"${fileDirname}/${fileBasenameNoExtension}_f.cpp",   // ADD in case you need functions file
                 "-arch", "sm_50",   // CUDA 5.0 nvidia architecture
                 "-lfftw3",
                 "-lm",

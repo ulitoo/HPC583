@@ -70,7 +70,10 @@
 			"bitset": "cpp",
 			"codecvt": "cpp",
 			"optional": "cpp",
-			"__nullptr": "cpp"
+			"__nullptr": "cpp",
+			"__hash_table": "cpp",
+			"__tree": "cpp",
+			"set": "cpp"
 		}
 	}
 }
