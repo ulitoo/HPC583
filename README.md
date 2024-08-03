@@ -17,3 +17,4 @@ This is the repository for the UW Physics Masters Degree Capstone
 
 **Python**: Other test implementations using python.
 
+https://github.com/ulitoo/HPC583/blob/main/PHYS_600_High_Performance_Computing_Techniques_in_Theoretical_Physics.pdf
