@@ -73,7 +73,14 @@
 			"__nullptr": "cpp",
 			"__hash_table": "cpp",
 			"__tree": "cpp",
-			"set": "cpp"
+			"set": "cpp",
+			"charconv": "cpp",
+			"source_location": "cpp",
+			"shared_mutex": "cpp",
+			"span": "cpp",
+			"cfenv": "cpp",
+			"variant": "cpp",
+			"format": "cpp"
 		}
 	}
 }
