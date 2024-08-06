@@ -1,5 +1,6 @@
 # UW Capstone PHYS 600
 This is the repository for the UW Physics Masters Degree Capstone 
+High-Performance Computing Techniques in Theoretical Physics
 
 ## Inside **Basics** Directory:
 
