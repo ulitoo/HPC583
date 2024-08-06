@@ -1,4 +1,4 @@
-# HPC583 UW Capstone PHYS 600
+# UW Capstone PHYS 600
 This is the repository for the UW Physics Masters Degree Capstone 
 
 ## Inside **Basics** Directory:
